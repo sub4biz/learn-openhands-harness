@@ -10,14 +10,16 @@ In this tour you'll give the agent a real task, watch it work, and then walk thr
 
 ## 2.1 Give it a real task
 
+You just set up the agent-canvas project in the quickstart. The canvas frontend needs to know where the backend server lives — that's controlled by an environment variable called `VITE_BACKEND_HOST`. It gets read in frontend code, set in dev scripts, and overridden in different configurations. Understanding how that wiring works is a real question a developer would ask when joining this project.
+
+It's also a good harness test: the agent has to search across multiple files, read what it finds, connect the dots, and produce a written summary — without modifying anything. You'll reuse this same prompt across all six projects so you can compare how different harness configurations change the agent's behavior on the same task.
+
 Open the canvas at `http://localhost:8000`. Start a new conversation and paste this prompt:
 
 ```
 Find every place VITE_BACKEND_HOST is read or set in this project,
 and write a short note explaining how the dev script picks the backend.
 ```
-
-This is the prompt you'll reuse across all six projects. It's a good harness test because it requires searching across files, reading what it finds, and producing a written summary — but it doesn't modify anything.
 
 Watch the agent work. When it finishes, come back here.
 
