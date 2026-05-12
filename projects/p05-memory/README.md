@@ -1,4 +1,4 @@
-# P04: Memory + Compaction
+# P05: Memory + Compaction
 
 | | |
 |---|---|
@@ -16,7 +16,7 @@
 
 ## Setup
 
-- Same model + tools + retrieval policy from P01-P03.
+- Same model + tools + retrieval policy from P01-P04.
 - Two configurations (and one optional):
   - **A: no `AGENTS.md`:** the scripts copy `WORKSPACE_DIR` to a temp directory and remove `AGENTS.md` there, so your original repo is not touched.
   - **B: minimal `AGENTS.md`:** three to five lines, hand-written, describing the directory layout and any non-obvious conventions. Don't auto-generate it.
@@ -42,4 +42,4 @@ Once `AGENTS.md` is dialed in, evaluate one skill the same way. Pick a skill fro
 
 Your hand-written `AGENTS.md` (5-20 lines), a note on whether compaction fired and what it preserved, and *at most one* skill that demonstrably moved the needle. If no skill helped, keep none. See `solution/` for examples.
 
-→ Next: [P05: Org Safety Profile](../p05-safety/)
+-> Next: [P06: Org Safety Profile](../p06-safety/)

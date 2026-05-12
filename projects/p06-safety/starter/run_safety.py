@@ -1,4 +1,4 @@
-"""P05 starter — run with local workspace, no security analyzer.
+"""P06 starter — run with local workspace, no security analyzer.
 
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_safety.py

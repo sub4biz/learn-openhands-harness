@@ -37,4 +37,4 @@
 
 A one-line decision rule. Something like *"Enable MCP semantic search only when at least 30% of recent prompts contain query terms that don't appear in source."* Or: *"Lexical only for this repo, synonym gap is rare."* Either is a useful artifact. See `solution/mcp_decision_rule.md`.
 
-→ Next: [P04: Memory + Compaction](../p04-memory/)
+-> Next: [P04: Task Decomposition](../p04-decomposition/)

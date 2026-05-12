@@ -1,6 +1,6 @@
 # Condenser / Memory Policy Notes
 
-## Observations from P04 runs
+## Observations from P05 runs
 
 ### AGENTS.md effect
 - With a minimal hand-written AGENTS.md (5-10 lines), the agent skipped N re-discovery turns.

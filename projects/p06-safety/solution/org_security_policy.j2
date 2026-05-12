@@ -1,0 +1,12 @@
+# Organization Security Risk Policy
+
+When using tools that support the security_risk parameter, classify each action:
+
+- LOW: read-only repository inspection, local tests, local lint commands.
+- MEDIUM: edits inside the workspace, dependency installation, local build changes.
+- HIGH: network calls, credential access, git push / publish operations,
+  destructive file operations, or changes to auth, billing, production infra,
+  or access control.
+
+Never send secrets, tokens, or private source code to an external service unless
+the user explicitly asks for that exact action and confirms it.

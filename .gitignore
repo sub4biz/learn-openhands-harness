@@ -20,7 +20,10 @@ venv/
 
 # Agent workspace artifacts
 workspace/
+.openhands-runs/
 results.md
-harness.py
-org_security_policy.j2
+/harness.py
+/org_security_policy.j2
+!projects/**/harness.py
+!projects/**/org_security_policy.j2
 FACTS.txt

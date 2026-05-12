@@ -1,4 +1,4 @@
-# P05: Org Safety Profile
+# P06: Org Safety Profile
 
 | | |
 |---|---|
@@ -14,7 +14,7 @@
 | `starter/` | `run_safety.py`. runs with local workspace, no security analyzer. Plus `org_security_policy.j2`. a template with TODO placeholders. |
 | `solution/` | `run_safety.py`. wires deterministic analyzers + `LLMSecurityAnalyzer` + `ConfirmRisky()` + `DockerWorkspace`. Plus `org_security_policy.j2`. completed policy. |
 
-## P05a: Security policy + confirmation
+## P06a: Security policy + confirmation
 
 For a company, "allowed versus not allowed" should be a shared harness artifact, not a private convention each engineer carries in their head. OpenHands gives you three layers:
 
@@ -49,7 +49,7 @@ The policy template changes how the agent labels its own actions. It does not cr
 - Confirmation friction should match the real blast radius. If everything prompts, people will rubber-stamp. If nothing prompts, the policy is decoration.
 - For "forbidden" actions, confirmation is not enough. Use hooks, deterministic analyzers, narrow tool lists, and sandbox boundaries.
 
-## P05b: Sandbox
+## P06b: Sandbox
 
 Once the policy works, move from local to Docker:
 
@@ -72,4 +72,4 @@ repo. The Docker solution mounts that path into the sandbox.
 
 (a) `org_security_policy.j2` plus the security profile table and (b) a `DockerWorkspace` runner script (~20 lines, paste-ready). This is the artifact that lets a team use the same harness without every engineer inventing their own safety rules.
 
-→ Next: [P06: Verification + Capstone](../p06-capstone/)
+-> Next: [P07: Verification + Capstone](../p07-capstone/)

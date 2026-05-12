@@ -53,6 +53,6 @@ Keep this as a quick sanity check rather than a full project: compare a `termina
 
 ## What you keep
 
-A `RouterLLM` or `LLMRegistry` configuration that lands within 10% of flagship correctness at 30–50% of flagship cost. Save the Python snippet (5–20 lines) verbatim. You'll paste it into `harness.py` in P06.
+A `RouterLLM` or `LLMRegistry` configuration that lands within 10% of flagship correctness at 30–50% of flagship cost. Save the Python snippet (5–20 lines) verbatim. You'll paste it into `harness.py` in P07.
 
 → Next: [P03: Retrieval](../p03-retrieval/)

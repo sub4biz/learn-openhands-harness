@@ -30,18 +30,19 @@ Three phases, in order. Each builds on the previous one.
 
 1. **[Quickstart](./01-quickstart.md).** Install, get a green health check, and have a working canvas in front of you.
 2. **[Harness tour](./02-harness-tour.md).** Give the agent a real task, read the trace, and see the five parts of a harness (model, tools, memory, safety, architecture) in the context of what actually happened.
-3. **[Projects](./projects/).** Six projects, each with a `starter/` and `solution/`. Change one lever at a time, keep the artifact, move on.
+3. **[Projects](./projects/).** Seven projects, each with a `starter/` and `solution/`. Change one lever at a time, keep the artifact, move on.
 
-Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each solution becomes the next project's foundation; by P06 you have a complete `harness.py` and an evaluation trace you can defend.
+Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each solution becomes the next project's foundation; by P07 you have a complete `harness.py` and an evaluation trace you can defend.
 
 | Project | What you change | What you keep |
 |---|---|---|
 | [P01: Agent Trace](./projects/p01-agent-trace/) | See the loop | Baseline trace + trace-reading checklist |
 | [P02: Model Routing](./projects/p02-model-routing/) | Right-size the thinking | RouterLLM / LLMRegistry config |
 | [P03: Retrieval](./projects/p03-retrieval/) | Stop hallucinated paths | Grep-first MCP-on/off decision rule |
-| [P04: Memory](./projects/p04-memory/) | Reduce re-discovery | AGENTS.md + condenser/memory policy notes |
-| [P05: Safety](./projects/p05-safety/) | Bound blast radius | Security profile + DockerWorkspace runner |
-| [P06: Capstone](./projects/p06-capstone/) | Stop "looks fine" | Critic + rubric + harness.py |
+| [P04: Task Decomposition](./projects/p04-decomposition/) | Break down large work | Decomposition plan + aggregation rule |
+| [P05: Memory](./projects/p05-memory/) | Reduce re-discovery | AGENTS.md + condenser/memory policy notes |
+| [P06: Safety](./projects/p06-safety/) | Bound blast radius | Security profile + DockerWorkspace runner |
+| [P07: Capstone](./projects/p07-capstone/) | Stop "looks fine" | Critic + rubric + harness.py |
 
 ---
 
@@ -71,7 +72,7 @@ set +a
 
 Optional knobs: `LLM_MODEL` for the main model, `LLM_MODEL_SMALL` for routing experiments, `WORKSPACE_DIR` for the repo the agent inspects. Never commit a real `.env`. If a key leaks, rotate it.
 
-**Safety note.** This tutorial starts dockerless on purpose. That's the easiest way to see the agent server, HTTP API, filesystem, and trace without another layer in the way. But `npm run dev:dangerously-dockerless` runs tool calls directly on your host. Point it at a scratch repo, not one you care about. P05 moves you to Docker. Until then, treat dockerless mode as a learning microscope, not a safe operating mode.
+**Safety note.** This tutorial starts dockerless on purpose. That's the easiest way to see the agent server, HTTP API, filesystem, and trace without another layer in the way. But `npm run dev:dangerously-dockerless` runs tool calls directly on your host. Point it at a scratch repo, not one you care about. P06 moves you to Docker. Until then, treat dockerless mode as a learning microscope, not a safe operating mode.
 
 ---
 
@@ -97,7 +98,7 @@ None of this is required. The tutorial is self-contained.
 
 ## Where to go from here
 
-After P06 you have a working `harness.py` and the mental model to extend it. A few directions worth exploring:
+After P07 you have a working `harness.py` and the mental model to extend it. A few directions worth exploring:
 
 - **More use cases.** The [OpenHands use cases overview](https://docs.openhands.dev/openhands/usage/use-cases/overview) shows what people are building with coding harnesses beyond the tutorial tasks: migrations, test generation, documentation, issue triage. Good source of fresh prompts to stress-test your harness against.
 - **Multi-agent orchestration.** This tutorial builds a single-agent harness. The [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo) shows the next step: composing multiple harnesses (Claude Code, Gemini CLI, OpenHands) into an implement, test, review pipeline. Three orchestration patterns, same workflow, different isolation and state-sharing tradeoffs.

@@ -1,14 +1,14 @@
 # Projects: Learning Path
 
-Six small projects, in order, each changing one harness lever and producing a config artifact that carries forward. By P06 you'll have a runnable `harness.py` and an agent-trace evaluation record that wires together everything you kept: your trace-reading checklist, model routing, retrieval decision, memory policy, security profile, sandbox, and critic.
+Seven small projects, in order, each changing one harness lever and producing a config artifact that carries forward. By P07 you'll have a runnable `harness.py` and an agent-trace evaluation record that wires together everything you kept: your trace-reading checklist, model routing, retrieval decision, decomposition plan, memory policy, security profile, sandbox, and critic.
 
-If you're using this as a first learning path, treat P01-P04 as the core concepts. P05-P06 are the advanced path where safety, verification, and composition start looking like production harness design.
+If you're using this as a first learning path, treat P01-P05 as the core concepts. P06-P07 are the advanced path where safety, verification, and composition start looking like production harness design.
 
 The pattern is behavior first: decide what agent behavior you want, change the smallest harness surface that could affect it, then observe whether the trace changed.
 
 > **Inspired by [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering)**, which organizes harness learning as a sequence of cumulative projects on the same Electron app rather than disconnected one-off ablations. That's a better shape for learning than the standard "here are some experiments" format, and it adapts naturally to OpenHands. The phase names, the two-column "What You Do / Harness Mechanism" preamble, and the "each project's solution becomes the next project's starter" property are all borrowed from there. Credit where it's due.
 
-> **Common task across all projects.** Pick one repo and one prompt, and freeze them. A good default: clone [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas) and use the prompt `"Find every place VITE_BACKEND_HOST is read or set, and write a short note explaining how the dev script picks the backend."`. narrow, repeatable, doesn't write code, and forces real retrieval.
+> **Common task for P01-P03 and P05.** Pick one repo and one prompt, and freeze them. A good default: clone [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas) and use the prompt `"Find every place VITE_BACKEND_HOST is read or set, and write a short note explaining how the dev script picks the backend."`. narrow, repeatable, doesn't write code, and forces real retrieval. P04 intentionally switches to a larger release-readiness task so decomposition has something real to improve.
 
 ---
 
@@ -29,19 +29,23 @@ PROJECT EVOLUTION (OpenHands harness)
        |                               keep: a one-line decision rule
        |                                     for when MCP earns its slot
        v
-  P04  Memory + compaction           → REDUCE RE-DISCOVERY
+  P04  Task decomposition            → BREAK DOWN THE WORK
+       |                               keep: decomposition plan
+       |                                     + aggregation rule
+       v
+  P05  Memory + compaction           → REDUCE RE-DISCOVERY
        |                               keep: a hand-written AGENTS.md
        |                                     + condenser/memory notes
        v
-  P05  Org safety profile            → BOUND BLAST RADIUS
+  P06  Org safety profile            → BOUND BLAST RADIUS
        |                               keep: org security profile
        |                                     + DockerWorkspace runner
        v
-  P06  Verification + capstone       → STOP "LOOKS FINE"
+  P07  Verification + capstone       → STOP "LOOKS FINE"
                                        keep: Critic + rubric + harness.py
 
   Each project produces a concrete artifact.
-  P06 is where they merge into one runnable harness.
+  P07 is where they merge into one runnable harness.
 ```
 
 ---
@@ -79,7 +83,7 @@ uv run --with openhands-sdk --with openhands-tools python run_baseline.py
 The early project scripts use the local agent server from the quickstart. That
 is useful for learning because you can inspect every API call and filesystem
 effect directly, but it is not the right safety boundary for real work. Keep
-`WORKSPACE_DIR` pointed at a scratch clone or a repo you can restore until P05,
+`WORKSPACE_DIR` pointed at a scratch clone or a repo you can restore until P06,
 where the runner moves into `DockerWorkspace`.
 
 Required environment variable for every live agent script:
@@ -138,13 +142,19 @@ Prompt: "Find every place VITE_BACKEND_HOST is read or set..."
 | Lexical only | | — | | |
 | Lexical + MCP | | | | |
 
-## P04: Memory + compaction
+## P04: Task decomposition
+| Config | Events | Cost | Correct | Notes |
+|---|---|---|---|---|
+| Monolithic | | | | |
+| Decomposed | | | | |
+
+## P05: Memory + compaction
 | Config | Turns | Tokens | Correct | Notes |
 |---|---|---|---|---|
 | No AGENTS.md | | | | |
 | Minimal AGENTS.md | | | | |
 
-## P05: Org safety profile
+## P06: Org safety profile
 | Action | Expected risk | Actual behavior | Accept? |
 |---|---|---|---|
 | Read files | LOW | | |
@@ -152,7 +162,7 @@ Prompt: "Find every place VITE_BACKEND_HOST is read or set..."
 | Network/package install | HIGH | | |
 | Delete file | HIGH | | |
 
-## P06: Verification + capstone
+## P07: Verification + capstone
 | Config | Pass rate (n=5) | Median iterations | Median cost | Wall-clock |
 |---|---|---|---|---|
 | No critic | | | | |
@@ -172,12 +182,17 @@ Prioritize these if the harness will be used by a team:
 - **Persistence as the audit substrate.** Persist events, agent configuration, execution state, tool outputs, metrics, workspace context, activated skills, and secrets so every run can be replayed and evaluated. ([Persistence guide](https://docs.openhands.dev/sdk/guides/convo-persistence).)
 - **Observability before shared service.** Emit OpenTelemetry traces for agent steps, tool calls, LLM calls, browser sessions, and conversation lifecycle events. This is how operations teams debug the harness instead of reading screenshots. ([Observability guide](https://docs.openhands.dev/sdk/guides/observability).)
 - **AgentSettings for admin-controlled profiles.** If Canvas or an internal UI will select "local dev", "company repo", or "regulated" profiles, serialize those knobs as validated settings rather than loose Python. ([Agent Settings guide](https://docs.openhands.dev/sdk/guides/agent-settings).)
-- **Secret handling as part of P05.** `conversation.update_secrets(...)` injects secrets only when needed and masks values in output. Do not treat secrets as generic environment variables once real systems are involved. ([Secret Registry guide](https://docs.openhands.dev/sdk/guides/secrets).)
+- **Secret handling as part of P06.** `conversation.update_secrets(...)` injects secrets only when needed and masks values in output. Do not treat secrets as generic environment variables once real systems are involved. ([Secret Registry guide](https://docs.openhands.dev/sdk/guides/secrets).)
 - **LLM fallback for production reliability.** `FallbackStrategy` retries alternate model profiles for rate limits and timeouts while keeping cost metrics visible. ([LLM Fallback guide](https://docs.openhands.dev/sdk/guides/llm-fallback).)
+
+Future project ideas:
+
+- **Guidance layer from rubric failures.** Keep the grading rubric hidden, run repeated evaluations, then convert recurring failure modes into agent-facing guidance that does not leak the answer key. A good starter artifact would be `guidance.yaml` with `look_at`, `common_misses`, positive examples, negative examples, and output requirements per task family. Measure before/after, because guidance can over-correct the model.
+- **Severity-aware scorecards.** Track P0/P1/P2 pass rates separately instead of one average score. This matters when one missed secret-handling issue is more important than ten minor documentation nits.
 
 Keep these as supporting tools, not the tutorial spine:
 
-- **Hooks** are useful for hard-deny rules and protocol checks, but Claude Code has hooks too. Use them when they enforce your P05 safety profile. ([Hooks guide](https://docs.openhands.dev/sdk/guides/hooks).)
+- **Hooks** are useful for hard-deny rules and protocol checks, but Claude Code has hooks too. Use them when they enforce your P06 safety profile. ([Hooks guide](https://docs.openhands.dev/sdk/guides/hooks).)
 - **Custom tools** matter when the schema changes behavior. "The agent can call another API" is not interesting by itself. ([Custom tools guide](https://docs.openhands.dev/sdk/guides/custom-tools).)
 - **MCP** belongs in the retrieval ablation. It is table stakes unless the experiment proves it improves a vocabulary-mismatch task.
 - **File-based agents and parallel tool execution** should wait until the single-agent trace is boring. They add coordination cost and shared-state risk. ([File-Based Agents guide](https://docs.openhands.dev/sdk/guides/agent-file-based), [Parallel Tool Execution guide](https://docs.openhands.dev/sdk/guides/parallel-tool-execution).)

@@ -12,7 +12,7 @@ In this tour you'll give the agent a real task, watch it work, and then walk thr
 
 You just set up the agent-canvas project in the quickstart. The canvas frontend needs to know where the backend server lives, and that's controlled by an environment variable called `VITE_BACKEND_HOST`. It gets read in frontend code, set in dev scripts, and overridden in different configurations. How that wiring works is a real question a developer would ask when joining this project.
 
-It also makes a good harness test. The agent has to search across multiple files, read what it finds, connect the dots, and produce a written summary, without modifying anything. You'll reuse this same prompt across all six projects so you can compare how different harness configurations change the agent's behavior on the same task.
+It also makes a good harness test. The agent has to search across multiple files, read what it finds, connect the dots, and produce a written summary, without modifying anything. You'll reuse this same prompt across the early projects so you can compare how different harness configurations change the agent's behavior on the same task.
 
 Open the canvas at `http://localhost:8000`. Start a new conversation and paste this prompt:
 
@@ -93,7 +93,7 @@ Memory in a harness has three layers:
 
 Check your trace: did a compaction event fire? On a short task, probably not. On a longer one, you'd see older events replaced by a summary.
 
-[P04](./projects/p04-memory/) has you run the same task with and without an `AGENTS.md` and measure the difference. A few lines of hand-written context can save the agent several rounds of exploratory grepping.
+[P05](./projects/p05-memory/) has you run the same task with and without an `AGENTS.md` and measure the difference. A few lines of hand-written context can save the agent several rounds of exploratory grepping.
 
 ---
 
@@ -111,13 +111,13 @@ OpenHands gives you three layers:
 
 Together these turn the agent loop from "run everything blindly" into "run safe things, ask about risky things, block dangerous things." The loop itself, `Conversation.run()`, is where this all executes: build prompt, call LLM, propose action, classify risk, run or pause, ingest result, repeat. It also has a [stuck detector](https://docs.openhands.dev/sdk/guides/agent-stuck-detector) that watches for the agent repeating the same failed action, and [hooks](https://docs.openhands.dev/sdk/guides/hooks) where you can inject custom logic at each step.
 
-[P05](./projects/p05-safety/) has you wire up a security analyzer, a confirmation policy, and a Docker sandbox.
+[P06](./projects/p06-safety/) has you wire up a security analyzer, a confirmation policy, and a Docker sandbox.
 
 ---
 
 ## 2.7 Part 5: Architecture (where it runs)
 
-Your agent ran as a single process on your laptop, with direct access to your filesystem. That's one architecture. OpenHands ships three: 
+Your agent ran as a single process on your laptop, with direct access to your filesystem. That's one architecture. OpenHands ships three:
 
 - A **local subprocess** (what `npm run dev:dangerously-dockerless` gives you, full filesystem access, fine for learning)
 - A **[Docker sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox)** (isolated filesystem and network, kill the container and everything resets)
@@ -125,7 +125,7 @@ Your agent ran as a single process on your laptop, with direct access to your fi
 
 Switching from local to Docker is a one-line change in your Python code: swap `Workspace(...)` for `DockerWorkspace(...)`. The agent code, tools, prompts, and trace stay identical. Where the work runs is separate from how it runs.
 
-There's also a "how many agents" axis. Your task ran as a single agent. For harder tasks you might want [sub-agent delegation](https://docs.openhands.dev/sdk/guides/agent-delegation) (spawn a child for a bounded subtask) or a [critic](https://docs.openhands.dev/sdk/guides/critic) (a second LLM that reviews the first agent's work). Default to single. Multi-agent adds coordination cost that has to earn itself. [P06](./projects/p06-capstone/) is where you optionally add a critic. For a full multi-agent pipeline (implement, test, review across different harnesses), see the [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo).
+There's also a "how many agents" axis. Your task ran as a single agent. For harder tasks you might want [sub-agent delegation](https://docs.openhands.dev/sdk/guides/agent-delegation) (spawn a child for a bounded subtask) or a [critic](https://docs.openhands.dev/sdk/guides/critic) (a second LLM that reviews the first agent's work). Default to single. Multi-agent adds coordination cost that has to earn itself. [P07](./projects/p07-capstone/) is where you optionally add a critic. For a full multi-agent pipeline (implement, test, review across different harnesses), see the [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo).
 
 ---
 
@@ -163,15 +163,16 @@ Once you see the parts, the diagnostic question changes. When an agent fails, yo
 
 ## 2.9 What's next
 
-The [projects](./projects/) take each of these five parts and have you change it, measure the difference, and keep the configuration that works. By P06 you'll have a complete `harness.py` that wires together your model routing, tool selection, memory policy, security profile, and sandbox.
+The [projects](./projects/) take each of these five parts and have you change it, measure the difference, and keep the configuration that works. By P07 you'll have a complete `harness.py` that wires together your model routing, tool selection, decomposition policy, memory policy, security profile, and sandbox.
 
 | Project | What you change | What you learn |
 |---|---|---|
 | [P01: Agent Trace](./projects/p01-agent-trace/) | Nothing, you read the trace | How to diagnose what the harness did |
 | [P02: Model Routing](./projects/p02-model-routing/) | The model | Cost vs. capability tradeoffs |
 | [P03: Retrieval](./projects/p03-retrieval/) | The tools | When semantic search earns its slot |
-| [P04: Memory](./projects/p04-memory/) | `AGENTS.md` and condensers | How prior knowledge changes behavior |
-| [P05: Safety](./projects/p05-safety/) | Security policy + Docker | Bounding what the agent can do |
-| [P06: Capstone](./projects/p06-capstone/) | Everything, wired together | A production-shaped harness |
+| [P04: Task Decomposition](./projects/p04-decomposition/) | The workflow shape | When smaller calls beat one large call |
+| [P05: Memory](./projects/p05-memory/) | `AGENTS.md` and condensers | How prior knowledge changes behavior |
+| [P06: Safety](./projects/p06-safety/) | Security policy + Docker | Bounding what the agent can do |
+| [P07: Capstone](./projects/p07-capstone/) | Everything, wired together | A production-shaped harness |
 
 For real-world tasks to throw at your harness beyond the tutorial prompt, the [OpenHands use cases overview](https://docs.openhands.dev/openhands/usage/use-cases/overview) covers migrations, test generation, documentation, and more.

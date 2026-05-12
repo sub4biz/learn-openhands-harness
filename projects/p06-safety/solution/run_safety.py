@@ -1,4 +1,4 @@
-"""P05 solution — security analyzer + confirmation policy + Docker sandbox.
+"""P06 solution — security analyzer + confirmation policy + Docker sandbox.
 
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_safety.py [read|edit|network|delete]

@@ -1,4 +1,4 @@
-# P06: Verification + Capstone
+# P07: Verification + Capstone
 
 | | |
 |---|---|
@@ -11,12 +11,12 @@
 
 | Directory | What's inside |
 |---|---|
-| `starter/` | `harness.py`. skeleton with imports and TODO placeholders for every kept artifact from P01-P05. |
-| `solution/` | `harness.py`. complete capstone wiring routing, tools, security policy, Docker sandbox, and a critic placeholder you can enable after P06a. |
+| `starter/` | `harness.py`. skeleton with imports and TODO placeholders for every kept artifact from P01-P06. |
+| `solution/` | `harness.py`. complete capstone wiring routing, tools, security policy, Docker sandbox, and a critic placeholder you can enable after P07a. |
 
 ---
 
-## P06a: Critic with iterative refinement
+## P07a: Critic with iterative refinement
 
 The talk is unambiguous on slide 97: a critic is the multi-agent pattern that earns its keep. Reflexion-style critic loops on SWE-bench: 57.9% (random sampling) → 63.6% (success-only) → **73.8%** (iterative critic with rubrics). Boris Cherny's practitioner number is 2–3× quality.
 
@@ -43,22 +43,22 @@ The talk is unambiguous on slide 97: a critic is the multi-agent pattern that ea
 - Cost-per-pass (cost ÷ pass rate) is often *flat or better* with the critic, because the critic shortens the long tail of "ran for 30 turns, still wrong." Compute this.
 - Specific rubrics drive most of the lift. Vague critics ("looks fine") barely help.
 
-> **What you keep from P06a:** the `Critic` + `IterativeRefinementConfig` block, the rubric prompt, and a pass/fail table over repeated runs.
+> **What you keep from P07a:** the `Critic` + `IterativeRefinementConfig` block, the rubric prompt, and a pass/fail table over repeated runs.
 
 ---
 
-## P06b: Capstone: ship a harness you trust
+## P07b: Capstone: ship a harness you trust
 
 | | |
 |---|---|
-| **What You Do** | Wire the keepers from P01-P06a into a single `harness.py` that boots a Docker-sandboxed agent with your routing, retrieval decision, `AGENTS.md`, organization security policy, and critic. Run it against a fresh repo. |
+| **What You Do** | Wire the keepers from P01-P07a into a single `harness.py` that boots a Docker-sandboxed agent with your routing, retrieval decision, decomposition rule, `AGENTS.md`, organization security policy, and critic. Run it against a fresh repo. |
 | **Harness Mechanism** | All of the above. This project doesn't introduce a new lever. It's where the levers stop being hypothetical. |
 
-**Phase: SHIP A HARNESS YOU TRUST.** P01-P06a each produced one artifact. The capstone is where you assemble them and find out whether your decisions compose.
+**Phase: SHIP A HARNESS YOU TRUST.** P01-P07a each produced one artifact. The capstone is where you assemble them and find out whether your decisions compose.
 
 ### Procedure
 
-1. Open `starter/harness.py`. Fill in the TODO blocks with the artifacts you kept from P01-P06a.
+1. Open `starter/harness.py`. Fill in the TODO blocks with the artifacts you kept from P01-P07a.
 2. Pick a fresh repo you haven't run the agent against. A public open-source library you actually use is best.
 3. Run `WORKSPACE_DIR=/path/to/repo uv run --with openhands-sdk --with openhands-tools --with openhands-workspace python harness.py "your real task"`.
 4. Watch the agent trace. Confirm:

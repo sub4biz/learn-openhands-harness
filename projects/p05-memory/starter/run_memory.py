@@ -1,4 +1,4 @@
-"""P04 solution — compare no-memory vs. AGENTS.md runs.
+"""P05 starter — run with no AGENTS.md. Add memory and compare.
 
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_memory.py
@@ -27,7 +27,6 @@ PROMPT = (
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 
-AGENTS_MD = Path(__file__).parent / "AGENTS.md"
 IGNORE_PATTERNS = shutil.ignore_patterns(
     ".git",
     ".venv",
@@ -106,27 +105,23 @@ def main() -> None:
     llm = LLM(usage_id="agent", model=model, api_key=SecretStr(api_key))
 
     # --- Config A: no AGENTS.md ---
-    dir_no_memory = copy_workspace(source_dir, "p04_no_memory_")
+    # Copy the target repo so this experiment does not mutate your original.
+    dir_no_memory = copy_workspace(source_dir, "p05_no_memory_")
     Path(dir_no_memory, "AGENTS.md").unlink(missing_ok=True)
 
-    # --- Config B: with AGENTS.md ---
-    dir_with_memory = copy_workspace(source_dir, "p04_with_memory_")
-    if AGENTS_MD.exists():
-        shutil.copy(AGENTS_MD, Path(dir_with_memory) / "AGENTS.md")
-    else:
-        print(f"Warning: {AGENTS_MD} not found, writing a minimal placeholder", file=sys.stderr)
-        (Path(dir_with_memory) / "AGENTS.md").write_text(
-            "# Agent Notes\n\nThis is agent-canvas, a TypeScript/React UI for OpenHands.\n"
-            "Source is in src/. Dev scripts are in the repo root.\n"
-        )
+    # TODO: Config B — create a working dir that contains an AGENTS.md.
+    # Copy the same source dir, then write a minimal AGENTS.md (3-5 lines).
+    # dir_with_memory = copy_workspace(source_dir, "p05_with_memory_")
+    # Path(dir_with_memory, "AGENTS.md").write_text("...your AGENTS.md...")
 
     results = []
 
     print("\n--- Config A: no AGENTS.md ---")
     results.append(run_config("no-memory", llm, server, dir_no_memory))
 
-    print("\n--- Config B: with AGENTS.md ---")
-    results.append(run_config("with-memory", llm, server, dir_with_memory))
+    # TODO: uncomment once you've created the AGENTS.md config
+    # print("\n--- Config B: with AGENTS.md ---")
+    # results.append(run_config("with-memory", llm, server, dir_with_memory))
 
     print("\n" + "=" * 70)
     print(f"{'Config':<15} {'Events':>7} {'Wall':>8} {'Cost':>10} {'Tokens in':>12}")
@@ -134,8 +129,6 @@ def main() -> None:
     for r in results:
         print(f"{r['label']:<15} {r['events']:>7} {r['wall']:>7.1f}s ${r['cost']:>9.4f} {r['tokens_in']:>12}")
     print("=" * 70)
-    print("\nCompare: did the AGENTS.md run skip re-discovery steps?")
-    print("Check your traces for compaction events and what they preserved.")
 
 
 if __name__ == "__main__":
