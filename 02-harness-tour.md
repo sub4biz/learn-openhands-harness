@@ -110,7 +110,7 @@ In the canvas: new conversations use `terminal`, `file_editor`, and `task_tracke
 
 Open a finished conversation in the canvas. Filter the agent trace to tool calls. Count: how many `terminal` / `grep` invocations did the model make before writing code? On a 100-file repo, three or four is healthy; thirty is a sign of a missing index.
 
-> **Tour exercise:** run the same `find where the canvas reads VITE_BACKEND_HOST` query against a clone of `agent-canvas`, once with only `terminal` + `file_editor` and once with an MCP semantic-search server attached. Compare turn count, total tokens, and whether either agent hallucinated a path. (We do this for real in [P03 — Retrieval](./03-projects.md#p03--retrieval).)
+> **Tour exercise:** run the same `find where the canvas reads VITE_BACKEND_HOST` query against a clone of `agent-canvas`, once with only `terminal` + `file_editor` and once with an MCP semantic-search server attached. Compare turn count, total tokens, and whether either agent hallucinated a path. (We do this for real in [P03 — Retrieval](./projects/p03-retrieval/).)
 
 Do not expect semantic search to win every time. For exact symbols, lexical search should usually win. Semantic search earns its slot when the user's words and the code's words do not match.
 
@@ -319,4 +319,4 @@ After this tour, you should be able to point at, in either the canvas or the cod
 
 If any of those is fuzzy, re-read the relevant section before moving on.
 
-The next file ([`03-projects.md`](./03-projects.md)) drops you into a six-project learning path. Each project changes one of the levers above, asks you to write down what you observed, and produces a config artifact you keep for the capstone. That's the part that turns a tour into engineering.
+The [`projects/`](./projects/) directory drops you into a six-project learning path. Each project has a `starter/` and `solution/`, changes one of the levers above, asks you to write down what you observed, and produces a config artifact you keep for the capstone. That's the part that turns a tour into engineering.

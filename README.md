@@ -27,22 +27,22 @@ The OpenHands [post-mortem on Claude Code's recent regression](https://www.anthr
 
 ## What you'll do
 
-| Step | File | What it covers |
+| Step | Where | What it covers |
 |---|---|---|
 | 1 | [`01-quickstart.md`](./01-quickstart.md) | Install, run agent server + canvas, send your first message, confirm the loop |
 | 2 | [`02-harness-tour.md`](./02-harness-tour.md) | Map the five levers to concrete code paths and HTTP endpoints — including LLM routing, organization security profiles, named confirmation policies, and an honest note on what OpenHands doesn't ship |
-| 3 | [`03-projects.md`](./03-projects.md) | A six-project learning path, each producing a config artifact, ending with a runnable `harness.py` capstone |
+| 3 | [`projects/`](./projects/) | Six projects, each with a `starter/` and `solution/`, each producing a config artifact, ending with a runnable `harness.py` capstone |
 
-The structure of step 3 is **inspired by [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering)**, which organizes harness learning as a sequence of cumulative projects rather than disconnected ablations. Each project produces something concrete that survives into the next; by P06 you have a complete `harness.py` and an evaluation trace you can defend.
+Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each project's solution becomes the next project's foundation; by P06 you have a complete `harness.py` and an evaluation trace you can defend.
 
-```text
-P01  Canvas + agent trace      → keep: a baseline trace and trace-reading checklist
-P02  Model routing             → keep: a RouterLLM / LLMRegistry config
-P03  Retrieval                 → keep: a grep-first MCP-on/off decision rule
-P04  Memory + compaction       → keep: AGENTS.md + condenser/memory policy notes
-P05  Org safety profile        → keep: security profile + DockerWorkspace runner
-P06  Verification + capstone   → keep: Critic + rubric + harness.py
-```
+| Project | Phase | What you keep |
+|---|---|---|
+| [`p01-agent-trace`](./projects/p01-agent-trace/) | See the loop | Baseline trace + trace-reading checklist |
+| [`p02-model-routing`](./projects/p02-model-routing/) | Right-size the thinking | RouterLLM / LLMRegistry config |
+| [`p03-retrieval`](./projects/p03-retrieval/) | Stop hallucinated paths | Grep-first MCP-on/off decision rule |
+| [`p04-memory`](./projects/p04-memory/) | Reduce re-discovery | AGENTS.md + condenser/memory policy notes |
+| [`p05-safety`](./projects/p05-safety/) | Bound blast radius | Security profile + DockerWorkspace runner |
+| [`p06-capstone`](./projects/p06-capstone/) | Stop "looks fine" | Critic + rubric + harness.py |
 
 ---
 
@@ -84,9 +84,9 @@ In order. Each step depends on the previous one being live.
 
 1. **[Quickstart](./01-quickstart.md)** — get a green health check and a working canvas in front of you. Skip nothing here.
 2. **[Harness tour](./02-harness-tour.md)** — with the system running, walk through where each of the five levers actually lives.
-3. **[Projects](./03-projects.md)** — change one thing at a time, save what you keep, move on. Don't read the next project before finishing the current one. The capstone (P06) is where the keepers compose into a single `harness.py`.
+3. **[Projects](./projects/)** — six projects, each with a `starter/` and `solution/`. Change one thing at a time, save what you keep, move on. Don't read the next project before finishing the current one. The capstone (P06) is where the keepers compose into a single `harness.py`.
 
-There's a small `scripts/` directory with the helper scripts the experiments reference.
+There's a small `scripts/` directory with the helper scripts the quickstart references.
 
 ---
 
