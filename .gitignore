@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+.env.local
+
+# uv
+.uv-cache/
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Agent workspace artifacts
+results.md
+harness.py
+org_security_policy.j2
+FACTS.txt
