@@ -1,4 +1,4 @@
-# 1 — Quickstart
+# 1: Quickstart
 
 The fastest path from zero to "I can see the harness running." We'll start the agent server and the canvas with the explicit no-Docker dev command, send a message, and prove the loop is alive.
 
@@ -71,7 +71,7 @@ You should see logs from the agent server, automation backend, Vite, and ingress
 Before you trust the canvas, hit the agent server's HTTP API directly. This is the same surface the canvas uses; if it works here, the canvas can't be lying to you.
 
 ```bash
-# Health check — no auth needed by default
+# Health check: no auth needed by default
 curl -s http://127.0.0.1:18000/health | jq .
 
 # Expected response (shape may evolve):
@@ -80,7 +80,7 @@ curl -s http://127.0.0.1:18000/health | jq .
 # }
 ```
 
-If you get a connection refused, the server isn't up yet — wait, then try again. `/health`, `/ready`, and `/server_info` are public server-detail endpoints. Most `/api/*` routes are authenticated because the dev script generates or reuses a session key. For direct API calls, send `X-Session-API-Key` with the value from `~/.openhands/agent-canvas/session-api-key.txt`, or export `SESSION_API_KEY` / `VITE_SESSION_API_KEY` yourself before starting the stack.
+If you get a connection refused, the server isn't up yet. Wait, then try again. `/health`, `/ready`, and `/server_info` are public server-detail endpoints. Most `/api/*` routes are authenticated because the dev script generates or reuses a session key. For direct API calls, send `X-Session-API-Key` with the value from `~/.openhands/agent-canvas/session-api-key.txt`, or export `SESSION_API_KEY` / `VITE_SESSION_API_KEY` yourself before starting the stack.
 
 The interesting endpoints, all documented in the [agent-server architecture page](https://docs.openhands.dev/sdk/arch/agent-server):
 
@@ -172,7 +172,7 @@ easy to restore. For real work, switch to Docker first.
 
 If this exits with `Missing required environment variable: LLM_API_KEY`, the server is fine; the SDK client just doesn't have model credentials in your shell. Source `.env`, export `LLM_API_KEY`, or use the canvas LLM settings path from §1.4.
 
-You should now have *two* conversations on the same agent server — one started from the canvas, one from Python. They share workspace state (subject to `working_dir`) and event persistence. Open the canvas; you can see the SDK-created conversation in the sidebar. That's not a coincidence — both clients write through the same `/api/conversations` endpoint.
+You should now have *two* conversations on the same agent server: one started from the canvas, one from Python. They share workspace state (subject to `working_dir`) and event persistence. Open the canvas; you can see the SDK-created conversation in the sidebar. That's not a coincidence. Both clients write through the same `/api/conversations` endpoint.
 
 ---
 

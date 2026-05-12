@@ -1,4 +1,4 @@
-# P01 — Canvas + Agent Trace
+# P01: Canvas + Agent Trace
 
 | | |
 |---|---|
@@ -11,8 +11,8 @@
 
 | Directory | What's inside |
 |---|---|
-| `starter/` | `run_baseline.py` — runs the prompt and prints raw event count + cost. The minimum viable SDK run. |
-| `solution/` | `run_baseline.py` — same script, extended to print a structured trace summary. Plus `trace_checklist.md` — the trace-reading checklist to keep. |
+| `starter/` | `run_baseline.py`. runs the prompt and prints raw event count + cost. The minimum viable SDK run. |
+| `solution/` | `run_baseline.py`. same script, extended to print a structured trace summary. Plus `trace_checklist.md`. the trace-reading checklist to keep. |
 
 ## Setup
 
@@ -27,7 +27,7 @@
 2. Open the agent trace. Identify: user message, assistant planning, each tool call, each observation, final answer, and any compaction placeholder.
 3. Save the agent trace from `GET /api/conversations/{id}/events/search` or the canvas UI if export is available in your build. OpenHands stores the trace as typed events; "agent trace" is the teaching term.
 4. Record the working directory, repo SHA, model, active tool list, number of tool calls, wall-clock time, cost, and whether the final answer cited real files.
-5. Run `starter/run_baseline.py` to repeat the same task via the SDK. Compare your SDK trace to the canvas trace — they should match.
+5. Run `starter/run_baseline.py` to repeat the same task via the SDK. Compare your SDK trace to the canvas trace. They should match.
 
 ## What to write down
 
@@ -53,4 +53,4 @@
 
 One baseline agent trace plus a trace-reading checklist (see `solution/trace_checklist.md`). Every later project compares against this trace, not against vibes.
 
-→ Next: [P02 — Model Routing](../p02-model-routing/)
+→ Next: [P02: Model Routing](../p02-model-routing/)

@@ -1,4 +1,4 @@
-# P05 — Org Safety Profile
+# P05: Org Safety Profile
 
 | | |
 |---|---|
@@ -11,10 +11,10 @@
 
 | Directory | What's inside |
 |---|---|
-| `starter/` | `run_safety.py` — runs with local workspace, no security analyzer. Plus `org_security_policy.j2` — a template with TODO placeholders. |
-| `solution/` | `run_safety.py` — wires deterministic analyzers + `LLMSecurityAnalyzer` + `ConfirmRisky()` + `DockerWorkspace`. Plus `org_security_policy.j2` — completed policy. |
+| `starter/` | `run_safety.py`. runs with local workspace, no security analyzer. Plus `org_security_policy.j2`. a template with TODO placeholders. |
+| `solution/` | `run_safety.py`. wires deterministic analyzers + `LLMSecurityAnalyzer` + `ConfirmRisky()` + `DockerWorkspace`. Plus `org_security_policy.j2`. completed policy. |
 
-## P05a — Security policy + confirmation
+## P05a: Security policy + confirmation
 
 For a company, "allowed versus not allowed" should be a shared harness artifact, not a private convention each engineer carries in their head. OpenHands gives you three layers:
 
@@ -49,7 +49,7 @@ The policy template changes how the agent labels its own actions. It does not cr
 - Confirmation friction should match the real blast radius. If everything prompts, people will rubber-stamp. If nothing prompts, the policy is decoration.
 - For "forbidden" actions, confirmation is not enough. Use hooks, deterministic analyzers, narrow tool lists, and sandbox boundaries.
 
-## P05b — Sandbox
+## P05b: Sandbox
 
 Once the policy works, move from local to Docker:
 
@@ -66,10 +66,10 @@ repo. The Docker solution mounts that path into the sandbox.
 
 - Docker startup adds tens of seconds of cold-start; the agent's actual loop time is unchanged.
 - The agent in Docker can't see your home dir. If your prompt accidentally relied on that (it shouldn't, but it happens), now you'll find out.
-- The agent trace is byte-for-byte similar — same tools, same observations, same final message. That equivalence is the point of having a harness boundary.
+- The agent trace is byte-for-byte similar: same tools, same observations, same final message. That equivalence is the point of having a harness boundary.
 
 ## What you keep
 
 (a) `org_security_policy.j2` plus the security profile table and (b) a `DockerWorkspace` runner script (~20 lines, paste-ready). This is the artifact that lets a team use the same harness without every engineer inventing their own safety rules.
 
-→ Next: [P06 — Verification + Capstone](../p06-capstone/)
+→ Next: [P06: Verification + Capstone](../p06-capstone/)

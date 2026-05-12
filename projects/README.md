@@ -1,6 +1,6 @@
-# Projects — Learning Path
+# Projects: Learning Path
 
-Six small projects, in order, each changing one harness lever and producing a config artifact that carries forward. By P06 you'll have a runnable `harness.py` and an agent-trace evaluation record that wires together everything you kept — your trace-reading checklist, model routing, retrieval decision, memory policy, security profile, sandbox, and critic.
+Six small projects, in order, each changing one harness lever and producing a config artifact that carries forward. By P06 you'll have a runnable `harness.py` and an agent-trace evaluation record that wires together everything you kept: your trace-reading checklist, model routing, retrieval decision, memory policy, security profile, sandbox, and critic.
 
 If you're using this as a first learning path, treat P01-P04 as the core concepts. P05-P06 are the advanced path where safety, verification, and composition start looking like production harness design.
 
@@ -8,7 +8,7 @@ The pattern is behavior first: decide what agent behavior you want, change the s
 
 > **Inspired by [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering)**, which organizes harness learning as a sequence of cumulative projects on the same Electron app rather than disconnected one-off ablations. That's a better shape for learning than the standard "here are some experiments" format, and it adapts naturally to OpenHands. The phase names, the two-column "What You Do / Harness Mechanism" preamble, and the "each project's solution becomes the next project's starter" property are all borrowed from there. Credit where it's due.
 
-> **Common task across all projects.** Pick one repo and one prompt, and freeze them. A good default: clone [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas) and use the prompt `"Find every place VITE_BACKEND_HOST is read or set, and write a short note explaining how the dev script picks the backend."` — narrow, repeatable, doesn't write code, and forces real retrieval.
+> **Common task across all projects.** Pick one repo and one prompt, and freeze them. A good default: clone [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas) and use the prompt `"Find every place VITE_BACKEND_HOST is read or set, and write a short note explaining how the dev script picks the backend."`. narrow, repeatable, doesn't write code, and forces real retrieval.
 
 ---
 
@@ -53,14 +53,14 @@ Every project directory follows the same shape:
 ```
 p01-agent-trace/
 ├── README.md       ← instructions, setup, procedure, what to record
-├── starter/        ← starting point — run this first
-└── solution/       ← reference implementation — check your work
+├── starter/        ← starting point. Run this first
+└── solution/       ← reference implementation. Check your work
 ```
 
 Each project README has:
 - A two-row preamble: **What You Do** / **Harness Mechanism**.
 - Setup, procedure, and what to record.
-- A **What you keep** callout at the end — the artifact that carries forward.
+- A **What you keep** callout at the end. The artifact that carries forward.
 
 Use a fresh conversation per run. Save agent traces.
 
@@ -111,7 +111,7 @@ scripts use the current directory.
 Keep a `results.md` next to your fork:
 
 ```markdown
-# Harness projects — <date>
+# Harness projects: <date>
 
 Repo: agent-canvas @ <SHA>
 Model: anthropic/claude-sonnet-4-5-20250929 (unless noted)
