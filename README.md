@@ -1,21 +1,65 @@
-# Harness Engineering on OpenHands: Agent Server + Agent Canvas
+# Learn Harness Engineering on OpenHands
 
-A hands-on tutorial that uses two open-source projects as a *real* harness you can read, run, and modify:
+Every coding agent ships two things: a model that reasons and a harness that does everything else. The harness decides what the model sees, which tools it can call, what it remembers across turns, when it stops, and whether it runs in a sandbox or on your bare machine. When an agent breaks, it's almost never the model. It's a harness decision you didn't know you were making.
 
-- **[Agent Server](https://docs.openhands.dev/sdk/arch/agent-server).** The HTTP API server that owns the workspace, conversation state, tool dispatch, and event stream. Everything outside the model lives here.
-- **[Agent Canvas](https://github.com/OpenHands/agent-canvas).** A TypeScript/React UI that talks to one or more agent servers. It is the operator surface: you watch the harness work, change knobs, fork conversations, and replay events.
+This tutorial gives you a working harness you can open, run, and change. You'll use two open-source projects, [Agent Server](https://docs.openhands.dev/sdk/arch/agent-server) (the HTTP API that owns the workspace, conversation state, and tool dispatch) and [Agent Canvas](https://github.com/OpenHands/agent-canvas) (the operator UI), as a microscope. You'll give the agent real tasks, read the trace of what happened, and then change one lever at a time to see the behavior shift.
 
-The point of this tutorial isn't to teach you how to install OpenHands. It's to use a working harness as a microscope. Each of the [five levers](https://github.com/rajshah4/harness-engineering#the-five-levers) (model, retrieval, memory, loops, architecture) is a concrete file or HTTP endpoint in this stack. We'll find each one, prod it, and watch the agent's behavior change.
+By the end you'll have a `harness.py` you built yourself, with model routing, retrieval config, memory policy, a security profile, and a critic. More importantly, you'll be able to look at any agent product and answer: *what would I change about its harness if I owned the source?*
 
-> If you want the conceptual frame first, read the [harness-engineering README](https://github.com/rajshah4/harness-engineering) and watch the [talk](https://www.youtube.com/watch?v=KijChx7q2nY). This tutorial assumes you already buy the thesis: **the model reasons; the harness does everything else.**
+> **Background.** If you want the conceptual frame first, read the [harness-engineering README](https://github.com/rajshah4/harness-engineering) and watch the [talk](https://www.youtube.com/watch?v=KijChx7q2nY). This tutorial assumes you already buy the thesis: the model reasons, the harness does everything else.
 
 ---
 
-## Model credentials upfront
+## Why an open harness
 
-Live agent runs need one secret: `LLM_API_KEY`. The checked-in SDK scripts default
-to Sonnet 4.5 via `anthropic/claude-sonnet-4-5-20250929`, so `LLM_MODEL` is
-optional unless you want to override the model.
+There are good harnesses you can't see (Claude Code, Codex CLI, Cursor) and good ones you can (SWE-agent, OpenHands, deepagents). For learning, only the open ones work. You need to read the code to understand what a harness *is*.
+
+OpenHands is a useful study target for three reasons:
+
+1. **Clean client/server split.** The agent server is a stateless-ish HTTP API; the canvas is a thin client. The harness boundary is literally an OpenAPI spec. You can replace either side without rewriting the other.
+2. **Three deployment shapes from one codebase.** Local process, Docker sandbox, hosted API, all by swapping a `Workspace` class. That makes the cost of *where work runs* visible.
+3. **The trace is a first-class object.** The chronological record of messages, tool calls, results, compaction, and confirmations is right there in the canvas. You don't have to grep logs to see what the harness is doing.
+
+The Anthropic [post-mortem on Claude Code's reasoning-effort regression](https://www.anthropic.com/engineering/claude-code-default-reasoning-effort-update) is a good reminder of what closed harnesses cost you. When the model didn't change but quality did, users had no way to diagnose it. The whole point of running an open harness is that you *can*.
+
+---
+
+## What you'll do
+
+Three phases, in order. Each builds on the previous one.
+
+1. **[Quickstart](./01-quickstart.md).** Install, get a green health check, and have a working canvas in front of you.
+2. **[Harness tour](./02-harness-tour.md).** Give the agent a real task, read the trace, and see the five parts of a harness (model, tools, memory, safety, architecture) in the context of what actually happened.
+3. **[Projects](./projects/).** Six projects, each with a `starter/` and `solution/`. Change one lever at a time, keep the artifact, move on.
+
+Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each solution becomes the next project's foundation; by P06 you have a complete `harness.py` and an evaluation trace you can defend.
+
+| Project | What you change | What you keep |
+|---|---|---|
+| [P01: Agent Trace](./projects/p01-agent-trace/) | See the loop | Baseline trace + trace-reading checklist |
+| [P02: Model Routing](./projects/p02-model-routing/) | Right-size the thinking | RouterLLM / LLMRegistry config |
+| [P03: Retrieval](./projects/p03-retrieval/) | Stop hallucinated paths | Grep-first MCP-on/off decision rule |
+| [P04: Memory](./projects/p04-memory/) | Reduce re-discovery | AGENTS.md + condenser/memory policy notes |
+| [P05: Safety](./projects/p05-safety/) | Bound blast radius | Security profile + DockerWorkspace runner |
+| [P06: Capstone](./projects/p06-capstone/) | Stop "looks fine" | Critic + rubric + harness.py |
+
+---
+
+## Prerequisites
+
+- macOS or Linux (Windows works but the canvas dev script assumes a POSIX shell)
+- **Node.js 22.12+** and `npm`
+- **`uv`** ([install](https://docs.astral.sh/uv/getting-started/installation/))
+- **An LLM API key** (Anthropic, OpenAI, or anything [LiteLLM](https://docs.litellm.ai/docs/providers) supports)
+- **Docker** is optional for the first walkthrough but recommended for real work
+
+Details on how `uv`, the API key, and Docker fit together are in the [quickstart](./01-quickstart.md).
+
+---
+
+## Setup
+
+Live agent runs need one secret: `LLM_API_KEY`. The checked-in scripts default to Sonnet 4.5, so `LLM_MODEL` is optional unless you want a different model.
 
 ```bash
 cp .env.example .env
@@ -25,121 +69,26 @@ source .env
 set +a
 ```
 
-The optional knobs are `LLM_MODEL` for the main model, `LLM_MODEL_SMALL` for
-routing experiments, and `WORKSPACE_DIR` for the repo the agent should inspect.
-Never commit a real `.env`, and don't paste provider keys into prompts, issues,
-or chat. If a key leaks, rotate it.
+Optional knobs: `LLM_MODEL` for the main model, `LLM_MODEL_SMALL` for routing experiments, `WORKSPACE_DIR` for the repo the agent inspects. Never commit a real `.env`. If a key leaks, rotate it.
+
+**Safety note.** This tutorial starts dockerless on purpose. That's the easiest way to see the agent server, HTTP API, filesystem, and trace without another layer in the way. But `npm run dev:dangerously-dockerless` runs tool calls directly on your host. Point it at a scratch repo, not one you care about. P05 moves you to Docker. Until then, treat dockerless mode as a learning microscope, not a safe operating mode.
 
 ---
 
-## Safety posture
+## Further reading
 
-This tutorial starts dockerless on purpose because it is the easiest way to see
-the agent server, HTTP API, filesystem, and trace without another layer in the
-way. Treat that mode as a learning microscope, not a safe operating mode.
+None of this is required. The tutorial is self-contained.
 
-`npm run dev:dangerously-dockerless` runs tool calls on your host machine. If
-you point it at a real repo, the agent can edit files there; if a task or tool
-goes sideways, it is too easy to damage your working tree or local environment.
-Use Docker for any real work, any repo you care about, or any task that may run
-commands beyond simple read-only inspection.
+**Harness engineering:**
 
-Rule of thumb:
-
-- **Dockerless:** tutorial walkthroughs, disposable scratch repos, trusted
-  read-only exploration.
-- **Docker:** real repositories, package installs, code edits, tests, browser
-  automation, unfamiliar prompts, or anything you would not run manually.
-
-P05 turns this into a `DockerWorkspace` runner. Until then, keep `WORKSPACE_DIR`
-pointed at a scratch clone or a repo you are comfortable restoring.
-
----
-
-## Why this stack
-
-There are good harnesses you can't see (Claude Code, Codex CLI, Cursor) and good ones you can (SWE-agent, OpenHands, deepagents). For learning, only the open ones work. You need to read the code to understand what a harness *is*.
-
-OpenHands is a useful study target for three specific reasons:
-
-1. **Clean client/server split.** The agent server is a stateless-ish HTTP API; the canvas is a thin client. The harness boundary is literally an OpenAPI spec. You can replace either side without rewriting the other.
-2. **The same server runs three deployment shapes** (local process, Docker sandbox, hosted API) by swapping a `Workspace` class. That makes the cost of *where work runs* visible.
-3. **Canvas exposes the harness.** The agent trace, the chronological record of messages, tool calls, tool results, compaction, and confirmations, is a first-class UI element. You don't have to grep logs to see what the harness is doing.
-
-The OpenHands [post-mortem on Claude Code's recent regression](https://www.anthropic.com/engineering/claude-code-default-reasoning-effort-update) is a good reminder of what closed harnesses cost you. When the model didn't change but quality did, users had no way to diagnose it. The whole point of running an open harness is that you *can*.
-
----
-
-## What you'll do
-
-| Step | Where | What it covers |
-|---|---|---|
-| 1 | [`01-quickstart.md`](./01-quickstart.md) | Install, run agent server + canvas, send your first message, confirm the loop |
-| 2 | [`02-harness-tour.md`](./02-harness-tour.md) | Run one real task, read the trace, and see the five parts of a harness (model, tools, memory, safety, architecture) in the context of what actually happened |
-| 3 | [`projects/`](./projects/) | Six projects, each with a `starter/` and `solution/`, each producing a config artifact, ending with a runnable `harness.py` capstone |
-
-Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each project's solution becomes the next project's foundation; by P06 you have a complete `harness.py` and an evaluation trace you can defend.
-
-| Project | Phase | What you keep |
-|---|---|---|
-| [`p01-agent-trace`](./projects/p01-agent-trace/) | See the loop | Baseline trace + trace-reading checklist |
-| [`p02-model-routing`](./projects/p02-model-routing/) | Right-size the thinking | RouterLLM / LLMRegistry config |
-| [`p03-retrieval`](./projects/p03-retrieval/) | Stop hallucinated paths | Grep-first MCP-on/off decision rule |
-| [`p04-memory`](./projects/p04-memory/) | Reduce re-discovery | AGENTS.md + condenser/memory policy notes |
-| [`p05-safety`](./projects/p05-safety/) | Bound blast radius | Security profile + DockerWorkspace runner |
-| [`p06-capstone`](./projects/p06-capstone/) | Stop "looks fine" | Critic + rubric + harness.py |
-
----
-
-## What you'll need
-
-- macOS or Linux. Windows works but the canvas dev script assumes a POSIX shell.
-- **Node.js 22.12+** and `npm` for the canvas frontend.
-- **`uv`** ([install](https://docs.astral.sh/uv/getting-started/installation/)). The dockerless canvas dev script uses `uvx` to spawn an agent-server subprocess on `127.0.0.1:18000` and the automation backend on `127.0.0.1:18001`. You don't need to `pip install` anything yourself.
-- **An LLM API key.** Anthropic, OpenAI, or anything else [LiteLLM](https://docs.litellm.ai/docs/providers) understands. The canvas stores this in its LLM settings; the SDK examples read `LLM_API_KEY` from your shell and default `LLM_MODEL` to Sonnet 4.5. Subscription login (`LLM.subscription_login()`) is supported if you'd rather not burn API credits.
-- **Docker** is optional for the first walkthrough, but recommended for real work. The quickstart uses the explicit no-Docker command so you can inspect the local process directly; move to Docker before pointing the agent at anything important.
-
-> Heads up: `npm run dev:dangerously-dockerless` runs the agent server directly on your machine. It can read and write the working directory you give it, and broader filesystem access is possible through shell tools. Use it for learning and scratch work only. Use Docker before you point the agent at anything you care about.
-
----
-
-## Reading list before you start
-
-A short, opinionated bibliography. None of it is required, but each piece earns its place.
-
-**Harness engineering, broadly:**
-
-- [Engineering the Harness (talk + slides)](https://github.com/rajshah4/harness-engineering#presentation-materials). The framing this whole repo is built around.
-- [OpenAI: Harness engineering](https://openai.com/index/harness-engineering/). Codex team's take. Worth reading to see how a closed harness describes its own design.
+- [Engineering the Harness (talk + slides)](https://github.com/rajshah4/harness-engineering#presentation-materials). The framing this repo is built around.
+- [OpenAI: Harness engineering](https://openai.com/index/harness-engineering/). Codex team's take on their own harness design.
 - [Anthropic: Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents). Compaction and long-running loop design.
-- [walkinglabs / learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering). Project-based course built around `AGENTS.md`, `feature_list.json`, `init.sh`, `progress.md`. Heavier on convention than on plumbing; complements this tutorial well.
+- [walkinglabs / learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering). Project-based course. Heavier on convention than on plumbing; complements this tutorial well.
 
-**Specific to OpenHands:**
+**OpenHands specifics:**
 
 - [Agent Server architecture](https://docs.openhands.dev/sdk/arch/agent-server). Design intent.
-- [Agent Server: Local](https://docs.openhands.dev/sdk/guides/agent-server/local-server) and [Docker Sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox) guides. Runnable examples.
-- [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas). The UI itself. The `DEVELOPMENT.md` is unusually honest about which knobs you actually have.
-- [`OpenHands/software-agent-sdk`](https://github.com/OpenHands/software-agent-sdk). The SDK the server is built on. The `examples/` directory is one of the better dumps of "this is how a real harness handles X" you'll find.
-
----
-
-## How to read the rest of this tutorial
-
-In order. Each step depends on the previous one being live.
-
-1. **[Quickstart](./01-quickstart.md).** Get a green health check and a working canvas in front of you. Skip nothing here.
-2. **[Harness tour](./02-harness-tour.md).** Give the agent a real task, read the trace, and see the five parts of a harness in action.
-3. **[Projects](./projects/).** Six projects, each with a `starter/` and `solution/`. Change one thing at a time, save what you keep, move on. Don't read the next project before finishing the current one. The capstone (P06) is where the keepers compose into a single `harness.py`.
-
-There's a small `scripts/` directory with the helper scripts the quickstart references.
-
----
-
-## What I'd hope you take away
-
-- **A harness is not abstract.** It is `POST /api/conversations`, `GET /api/conversations/{id}/events/search`, `GET /sockets/events/{id}`, `tools=[...]`, `cli_mode=False`, `OH_AGENT_SERVER_LOCAL_PATH=...`. Every lever in the talk has a corresponding string in a config file or a parameter in an SDK call.
-- **Open harnesses are diagnostic instruments.** When something goes wrong, you can read the loop. When something goes right, you can copy the policy.
-- **MCP is not the point.** Claude Code, Cursor, and OpenHands can all call tools. The learning value here is that you can inspect and change the loop state, workspace boundary, memory policy, safety policy, and verification policy behind those tools.
-- **Canvas is doing more than rendering.** The UI is enforcing decisions about what the operator can see, what they can replay, what they can fork, and what they can change. That's harness work, not frontend work.
-
-When you're done, you should be able to answer this question for any other agent product, open or closed: *what would I change about its harness if I owned the source?*
+- [Agent Server: Local](https://docs.openhands.dev/sdk/guides/agent-server/local-server) and [Docker Sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox) guides.
+- [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas). The UI. The `DEVELOPMENT.md` is unusually honest about which knobs you actually have.
+- [`OpenHands/software-agent-sdk`](https://github.com/OpenHands/software-agent-sdk). The SDK the server is built on.
