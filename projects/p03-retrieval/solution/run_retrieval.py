@@ -3,8 +3,10 @@
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_retrieval.py
 
-Required env vars:  LLM_API_KEY, LLM_MODEL
-Optional:           AGENT_SERVER (default http://127.0.0.1:18000)
+Required env vars:  LLM_API_KEY
+Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
+                    AGENT_SERVER (default http://127.0.0.1:18000)
+                    WORKSPACE_DIR (default current directory)
 
 Note: The MCP config below is a placeholder. Replace MCP_SERVER_URL with your
 actual semantic-search MCP server. If you don't have one, the lexical-only
@@ -13,7 +15,6 @@ run is the useful data point — most code-reading tasks don't need semantic.
 
 import os
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -28,6 +29,8 @@ PROMPT = (
     "Find every place VITE_BACKEND_HOST is read or set, "
     "and write a short note explaining how the dev script picks the backend."
 )
+
+DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 
 # Also try this synonym-gap prompt to see when semantic earns its slot:
 PROMPT_SYNONYM = (
@@ -51,13 +54,27 @@ def resolve_api_key() -> str | None:
     return path.read_text().strip() if path.exists() else None
 
 
-def run_config(label: str, agent: Agent, server: str, prompt: str = PROMPT) -> dict:
+def resolve_working_dir() -> str:
+    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
+    if not path.exists():
+        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return str(path)
+
+
+def run_config(
+    label: str,
+    agent: Agent,
+    server: str,
+    working_dir: str,
+    prompt: str = PROMPT,
+) -> dict:
     workspace = Workspace(
         host=server,
         api_key=resolve_api_key(),
-        working_dir=tempfile.mkdtemp(prefix=f"p03_{label}_"),
+        working_dir=working_dir,
     )
-    conversation = Conversation(agent=agent, workspace=workspace, visualize=True)
+    conversation = Conversation(agent=agent, workspace=workspace)
     assert isinstance(conversation, RemoteConversation)
 
     try:
@@ -79,8 +96,9 @@ def run_config(label: str, agent: Agent, server: str, prompt: str = PROMPT) -> d
 
 def main() -> None:
     api_key = require_env("LLM_API_KEY")
-    model = require_env("LLM_MODEL")
+    model = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
+    working_dir = resolve_working_dir()
 
     llm = LLM(usage_id="agent", model=model, api_key=SecretStr(api_key))
 
@@ -94,17 +112,23 @@ def main() -> None:
 
     # --- Config B: lexical + MCP semantic ---
     # To wire a real MCP server, see https://docs.openhands.dev/sdk/guides/mcp
-    # Example: agent_semantic = Agent(llm=llm, tools=[...lexical_tools...],
-    #                                 mcp_servers=[{"url": "http://localhost:9100"}])
+    # Example:
+    # agent_semantic = Agent(
+    #     llm=llm,
+    #     tools=[...lexical_tools...],
+    #     mcp_config={"mcpServers": {"search": {"url": "http://localhost:9100/mcp"}}},
+    # )
     # For now, we run both prompts with lexical to show the synonym-gap contrast.
 
     results = []
 
     print("\n--- Config A: lexical, exact-match prompt ---")
-    results.append(run_config("lexical-exact", agent_lexical, server, PROMPT))
+    results.append(run_config("lexical-exact", agent_lexical, server, working_dir, PROMPT))
 
     print("\n--- Config A: lexical, synonym prompt ---")
-    results.append(run_config("lexical-synonym", agent_lexical, server, PROMPT_SYNONYM))
+    results.append(
+        run_config("lexical-synonym", agent_lexical, server, working_dir, PROMPT_SYNONYM)
+    )
 
     print("\n" + "=" * 60)
     print(f"{'Config':<20} {'Events':>7} {'Wall':>8} {'Cost':>10}")

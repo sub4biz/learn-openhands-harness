@@ -3,13 +3,14 @@
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_retrieval.py
 
-Required env vars:  LLM_API_KEY, LLM_MODEL
-Optional:           AGENT_SERVER (default http://127.0.0.1:18000)
+Required env vars:  LLM_API_KEY
+Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
+                    AGENT_SERVER (default http://127.0.0.1:18000)
+                    WORKSPACE_DIR (default current directory)
 """
 
 import os
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -23,6 +24,8 @@ PROMPT = (
     "Find every place VITE_BACKEND_HOST is read or set, "
     "and write a short note explaining how the dev script picks the backend."
 )
+
+DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 
 
 def require_env(name: str) -> str:
@@ -41,13 +44,21 @@ def resolve_api_key() -> str | None:
     return path.read_text().strip() if path.exists() else None
 
 
-def run_config(label: str, agent: Agent, server: str) -> dict:
+def resolve_working_dir() -> str:
+    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
+    if not path.exists():
+        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return str(path)
+
+
+def run_config(label: str, agent: Agent, server: str, working_dir: str) -> dict:
     workspace = Workspace(
         host=server,
         api_key=resolve_api_key(),
-        working_dir=tempfile.mkdtemp(prefix=f"p03_{label}_"),
+        working_dir=working_dir,
     )
-    conversation = Conversation(agent=agent, workspace=workspace, visualize=True)
+    conversation = Conversation(agent=agent, workspace=workspace)
     assert isinstance(conversation, RemoteConversation)
 
     try:
@@ -69,8 +80,9 @@ def run_config(label: str, agent: Agent, server: str) -> dict:
 
 def main() -> None:
     api_key = require_env("LLM_API_KEY")
-    model = require_env("LLM_MODEL")
+    model = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
+    working_dir = resolve_working_dir()
 
     llm = LLM(usage_id="agent", model=model, api_key=SecretStr(api_key))
 
@@ -88,11 +100,11 @@ def main() -> None:
     results = []
 
     print("\n--- Config A: lexical only ---")
-    results.append(run_config("lexical", agent_lexical, server))
+    results.append(run_config("lexical", agent_lexical, server, working_dir))
 
     # TODO: uncomment once you've added the MCP tool
     # print("\n--- Config B: lexical + semantic ---")
-    # results.append(run_config("semantic", agent_semantic, server))
+    # results.append(run_config("semantic", agent_semantic, server, working_dir))
 
     print("\n" + "=" * 60)
     print(f"{'Config':<12} {'Events':>7} {'Wall':>8} {'Cost':>10}")

@@ -19,6 +19,7 @@ venv/
 *.swp
 
 # Agent workspace artifacts
+workspace/
 results.md
 harness.py
 org_security_policy.j2

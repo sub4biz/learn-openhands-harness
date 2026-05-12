@@ -19,7 +19,7 @@
 - Same model (from P02), same baseline tool list. Hold them constant.
 - Two configurations:
   - **A — lexical only:** `terminal` + `file_editor`.
-  - **B — lexical + semantic:** add an MCP server that exposes a `search_code` tool against the same repo. A small, real one is [`OpenHands/extensions`](https://github.com/OpenHands/extensions) — pick one or build a stub that wraps `bm25s` over the repo files.
+  - **B — lexical + semantic:** add an MCP server through `Agent(..., mcp_config={"mcpServers": ...})` that exposes a `search_code` tool against the same repo. A small, real one is [`OpenHands/extensions`](https://github.com/OpenHands/extensions) — pick one or build a stub that wraps `bm25s` over the repo files.
 
 ## Procedure
 

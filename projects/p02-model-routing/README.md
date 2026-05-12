@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **What You Do** | Run the same prompt three ways: flagship LLM, small LLM, and a router that mixes them. Compare turns, tokens, cost, and where the cost lands. |
+| **What You Do** | Run the same prompt three ways: flagship LLM, small LLM, and a router-backed config. Compare turns, tokens, cost, and where the cost lands. |
 | **Harness Mechanism** | [`LLMRegistry`](https://docs.openhands.dev/sdk/guides/llm-registry) + [`RouterLLM`](https://docs.openhands.dev/sdk/guides/llm-routing) (e.g. `MultimodalRouter`) |
 
 **Phase: RIGHT-SIZE THE THINKING.** Most operators leave the model lever untouched. This project changes that.
@@ -22,13 +22,13 @@
 - Three configs:
   - **A — flagship:** e.g. `anthropic/claude-sonnet-4-5-20250929`.
   - **B — small:** e.g. `openai/gpt-5-mini-2025-08-07` or `anthropic/claude-haiku-4-5-20251001`.
-  - **C — routed:** a `RouterLLM` (start with the shipped `MultimodalRouter`, or write a 20-line keyword router that sends `"refactor"` / `"design"` / `"debug complex"` to the flagship and everything else to the small model).
+  - **C — routed:** a `RouterLLM`. The solution uses the shipped `MultimodalRouter`: image-bearing or over-context calls go to the flagship, ordinary text calls go to the small model. For a text-only prompt, that means you should expect most or all routed calls to land on the small model; if you want mixed text routing, use an importable custom router policy.
 
 ## Procedure
 
 1. Start a conversation with config A. Run to completion. Record: turn count, in/out tokens *per `usage_id`*, accumulated cost, correctness.
 2. Fork from start (or re-create) and run config B. Same metrics.
-3. Run config C. Same metrics — but now `get_combined_metrics()` will break the cost down by leg of the router. Note which calls actually went to which model.
+3. Run config C. Same metrics — but now `get_combined_metrics()` will break the cost down by leg of the router. Note which calls actually went to which model, and whether that matches the router policy.
 
 ## What to write down
 

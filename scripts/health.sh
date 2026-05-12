@@ -7,11 +7,11 @@ set -euo pipefail
 
 AGENT_SERVER="${AGENT_SERVER:-http://127.0.0.1:18000}"
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "jq not installed; falling back to raw curl"
-  curl -fsS "${AGENT_SERVER}/health"
-  echo
-  exit 0
-fi
+response="$(curl -fsS "${AGENT_SERVER}/health")"
 
-curl -fsS "${AGENT_SERVER}/health" | jq .
+if command -v jq >/dev/null 2>&1; then
+  printf '%s\n' "${response}" | jq .
+else
+  echo "jq not installed; falling back to raw curl"
+  printf '%s\n' "${response}"
+fi

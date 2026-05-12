@@ -2,6 +2,12 @@
 
 The fastest path from zero to "I can see the harness running." We'll start the agent server and the canvas with the explicit no-Docker dev command, send a message, and prove the loop is alive.
 
+This quickstart is intentionally dockerless so you can inspect the local process
+and API directly. Use it only for the tutorial, disposable scratch work, and
+trusted read-only exploration. For real repositories or any task that may edit
+files, install packages, run tests, or browse the web, use Docker; local mode is
+too easy to aim at the wrong directory and damage your machine or working tree.
+
 If anything in this section fails, fix it before continuing. The rest of the tutorial assumes you have a working setup.
 
 ---
@@ -16,16 +22,28 @@ node --version   # → v22.12.x or higher
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv --version
 
-# An LLM API key. Replace the model and key for your provider.
-export LLM_API_KEY="sk-..."
-export LLM_MODEL="anthropic/claude-sonnet-4-5-20250929"
+# Model credentials. Only LLM_API_KEY is required by the SDK scripts.
+cp .env.example .env
+# Edit .env and set LLM_API_KEY to a provider key.
+set -a
+source .env
+set +a
 ```
+
+The examples default to `anthropic/claude-sonnet-4-5-20250929` (Sonnet 4.5).
+Override `LLM_MODEL` only if you want a different LiteLLM provider/model string.
+Keep real keys in `.env`, not in prompts, docs, or commits.
 
 The canvas dev script will install Python dependencies into uvx-managed envs on first run. You don't manage those envs yourself.
 
 ---
 
 ## 1.2 Clone and start the canvas
+
+This command is named `dangerously-dockerless` for a reason. Keep the first run
+small and reversible. A good target is a scratch clone or the tiny default
+workspace created by the canvas. Do not point it at your main work repo until
+you have moved to the Docker path in the tour.
 
 ```bash
 git clone https://github.com/OpenHands/agent-canvas.git
@@ -44,7 +62,7 @@ What this actually does, from `DEVELOPMENT.md`:
 
 You should see logs from the agent server, automation backend, Vite, and ingress interleaved. Wait until the launcher prints `Ready at http://localhost:18000/server_info` and then `Main UI: http://localhost:8000/`. Then open `http://localhost:8000` in a browser.
 
-> **Filesystem warning, repeated.** This setup runs the agent server directly on your machine. The agent has full bash, file-edit, and (optionally) browser tools against your real filesystem. Don't run risky tasks until you switch to a Docker sandbox in the tour.
+> **Filesystem warning, repeated.** This setup runs the agent server directly on your machine. The agent has full bash, file-edit, and (optionally) browser tools against your real filesystem. Dockerless mode is for learning only; use a Docker sandbox before real work.
 
 ---
 
@@ -106,12 +124,13 @@ The canvas is one client. The Python SDK is another. Running the same task throu
 Use the checked-in helper at [`scripts/quickstart.py`](./scripts/quickstart.py), or save this equivalent code as `quickstart.py`:
 
 ```python
-import os, tempfile
+import os
 from pathlib import Path
 from pydantic import SecretStr
 from openhands.sdk import LLM, Conversation, RemoteConversation, Workspace
 from openhands.tools.preset.default import get_default_agent
 
+DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 session_key_path = Path.home() / ".openhands" / "agent-canvas" / "session-api-key.txt"
 agent_server_api_key = os.getenv("AGENT_SERVER_API_KEY") or (
     session_key_path.read_text().strip() if session_key_path.exists() else None
@@ -119,7 +138,7 @@ agent_server_api_key = os.getenv("AGENT_SERVER_API_KEY") or (
 
 llm = LLM(
     usage_id="agent",
-    model=os.environ["LLM_MODEL"],
+    model=os.getenv("LLM_MODEL", DEFAULT_MODEL),
     api_key=SecretStr(os.environ["LLM_API_KEY"]),
 )
 agent = get_default_agent(llm=llm, cli_mode=True)
@@ -128,9 +147,9 @@ agent = get_default_agent(llm=llm, cli_mode=True)
 workspace = Workspace(
     host="http://127.0.0.1:18000",
     api_key=agent_server_api_key,
-    working_dir=tempfile.mkdtemp(prefix="harness_quickstart_"),
+    working_dir=os.getenv("WORKSPACE_DIR", os.getcwd()),
 )
-conversation = Conversation(agent=agent, workspace=workspace, visualize=True)
+conversation = Conversation(agent=agent, workspace=workspace)
 assert isinstance(conversation, RemoteConversation)
 
 conversation.send_message("Write 3 facts about this project into FACTS.txt.")
@@ -147,7 +166,11 @@ Run it:
 uv run --with openhands-sdk --with openhands-tools python scripts/quickstart.py
 ```
 
-If this exits with `Missing required environment variable: LLM_API_KEY`, the server is fine; the SDK client just doesn't have model credentials in your shell. Export `LLM_API_KEY` and rerun, or use the canvas LLM settings path from §1.4.
+Set `WORKSPACE_DIR=/path/to/repo` if you want the SDK run to inspect a repo other
+than the current directory. In dockerless mode, make that repo disposable or
+easy to restore. For real work, switch to Docker first.
+
+If this exits with `Missing required environment variable: LLM_API_KEY`, the server is fine; the SDK client just doesn't have model credentials in your shell. Source `.env`, export `LLM_API_KEY`, or use the canvas LLM settings path from §1.4.
 
 You should now have *two* conversations on the same agent server — one started from the canvas, one from Python. They share workspace state (subject to `working_dir`) and event persistence. Open the canvas; you can see the SDK-created conversation in the sidebar. That's not a coincidence — both clients write through the same `/api/conversations` endpoint.
 
@@ -170,6 +193,7 @@ If any of the above is false, fix it now. Common failures and fixes:
 | `node: command not found` | Wrong Node version | `nvm install 22.12 && nvm use 22.12` |
 | `uvx: command not found` | `uv` not on `PATH` | Re-source your shell, or `~/.local/bin/uvx --version` |
 | Server exits immediately, no health endpoint | `uvx` install/start failure or a busy port | Re-read the launcher error; rerun after freeing the port or fixing `uvx` |
+| `500 Internal Server Error` with `tmux` / `File name too long` | macOS temp path made the tmux socket path too long | Restart the server with a short tmux temp dir: `mkdir -p /private/tmp/oh-tmux && TMUX_TMPDIR=/private/tmp/oh-tmux npm run dev:dangerously-dockerless` |
 | `401 Unauthorized` from `/api/*` | Dev server generated a session API key | Send `X-Session-API-Key: $(cat ~/.openhands/agent-canvas/session-api-key.txt)` or pin `SESSION_API_KEY` / `VITE_SESSION_API_KEY` before restart |
 | Canvas blank, console errors about CORS | Frontend pointing at wrong backend | In the full dockerless stack, `VITE_BACKEND_HOST` should point at the ingress port (`127.0.0.1:8000` by default). In frontend-only mode, point it at your existing backend. |
 | Canvas can't connect, port 8000 in use | Some other dev server | Set `PORT=8123 npm run dev:dangerously-dockerless` |

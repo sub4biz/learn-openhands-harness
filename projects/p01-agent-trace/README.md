@@ -18,6 +18,7 @@
 
 - Same repo and same prompt for the rest of the projects.
 - Use the default canvas setup from the [quickstart](../../01-quickstart.md).
+- Set `WORKSPACE_DIR=/path/to/that/repo` before running the SDK scripts.
 - Good default prompt: `"Find every place VITE_BACKEND_HOST is read or set, and write a short note explaining how the dev script picks the backend."`
 
 ## Procedure

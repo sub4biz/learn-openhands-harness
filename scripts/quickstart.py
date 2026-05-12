@@ -13,13 +13,14 @@ Required environment variables:
 
 Optional:
     LLM_MODEL            LiteLLM-style provider/model string
+                         (default anthropic/claude-sonnet-4-5-20250929)
     AGENT_SERVER          Default http://127.0.0.1:18000
     AGENT_SERVER_API_KEY  Session key for authenticated dev servers
+    WORKSPACE_DIR         Repo/workspace to give the agent (default: cwd)
 """
 
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
@@ -34,10 +35,19 @@ def require_env(name: str) -> str:
         f"Missing required environment variable: {name}\n\n"
         "Before running this script, set your model provider key, for example:\n"
         "  export LLM_API_KEY='sk-...'\n"
+        f"\nOptional model override:\n"
         f"  export LLM_MODEL='{DEFAULT_MODEL}'\n",
         file=sys.stderr,
     )
     raise SystemExit(2)
+
+
+def resolve_working_dir() -> str:
+    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
+    if not path.exists():
+        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return str(path)
 
 
 def main() -> None:
@@ -59,10 +69,10 @@ def main() -> None:
     workspace = Workspace(
         host=server,
         api_key=agent_server_api_key,
-        working_dir=tempfile.mkdtemp(prefix="harness_quickstart_"),
+        working_dir=resolve_working_dir(),
     )
 
-    conversation = Conversation(agent=agent, workspace=workspace, visualize=True)
+    conversation = Conversation(agent=agent, workspace=workspace)
     assert isinstance(conversation, RemoteConversation)
 
     try:

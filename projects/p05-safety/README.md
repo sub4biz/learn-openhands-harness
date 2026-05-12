@@ -12,17 +12,17 @@
 | Directory | What's inside |
 |---|---|
 | `starter/` | `run_safety.py` — runs with local workspace, no security analyzer. Plus `org_security_policy.j2` — a template with TODO placeholders. |
-| `solution/` | `run_safety.py` — wires `LLMSecurityAnalyzer` + `ConfirmRisky()` + `DockerWorkspace`. Plus `org_security_policy.j2` — completed policy. |
+| `solution/` | `run_safety.py` — wires deterministic analyzers + `LLMSecurityAnalyzer` + `ConfirmRisky()` + `DockerWorkspace`. Plus `org_security_policy.j2` — completed policy. |
 
 ## P05a — Security policy + confirmation
 
 For a company, "allowed versus not allowed" should be a shared harness artifact, not a private convention each engineer carries in their head. OpenHands gives you three layers:
 
 - `security_policy_filename`: model-facing risk guidance rendered into the agent's system prompt.
-- `LLMSecurityAnalyzer`, custom analyzers, or an ensemble: action risk classification.
+- `LLMSecurityAnalyzer`, deterministic analyzers, custom analyzers, or an ensemble: action risk classification.
 - `ConfirmRisky()`, `AlwaysConfirm()`, hooks, and sandboxing: execution control.
 
-The policy template changes how the agent labels its own actions. It does not create a hard block by itself. Treat it as the written policy, then pair it with analyzers and confirmation behavior.
+The policy template changes how the agent labels its own actions. It does not create a hard block by itself. Treat it as the written policy, then pair it with analyzers and confirmation behavior. The solution uses `PolicyRailSecurityAnalyzer` and `PatternSecurityAnalyzer` for local deterministic checks, plus `LLMSecurityAnalyzer` to read the model-provided `security_risk`.
 
 ### Procedure
 
@@ -58,6 +58,9 @@ cd starter  # or solution
 uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
     python run_safety.py --docker
 ```
+
+Set `WORKSPACE_DIR=/path/to/repo` to run the safety prompts against a specific
+repo. The Docker solution mounts that path into the sandbox.
 
 ### What to look for
 

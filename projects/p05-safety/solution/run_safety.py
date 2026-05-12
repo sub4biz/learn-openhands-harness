@@ -5,22 +5,28 @@ Run with:
     uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
         python run_safety.py --docker [read|edit|network|delete]
 
-Required env vars:  LLM_API_KEY, LLM_MODEL
-Optional:           LLM_MODEL_SECURITY (default uses LLM_MODEL)
+Required env vars:  LLM_API_KEY
+Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
                     AGENT_SERVER (default http://127.0.0.1:18000)
+                    WORKSPACE_DIR (default current directory)
 """
 
 import os
 import sys
-import tempfile
 import time
 from pathlib import Path
 
 from pydantic import SecretStr
 from openhands.sdk import LLM, Agent, Conversation, RemoteConversation, Workspace
 from openhands.sdk.tool import Tool
-from openhands.sdk.security.confirmation_policy import ConfirmRisky
-from openhands.sdk.security.llm_analyzer import LLMSecurityAnalyzer
+from openhands.sdk.security import (
+    ConfirmRisky,
+    EnsembleSecurityAnalyzer,
+    LLMSecurityAnalyzer,
+    PatternSecurityAnalyzer,
+    PolicyRailSecurityAnalyzer,
+    SecurityRisk,
+)
 from openhands.tools.terminal import TerminalTool
 from openhands.tools.file_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
@@ -31,6 +37,8 @@ PROMPTS = {
     "network": "Install the 'requests' package.",
     "delete": "Delete the NOTES.md file you just created.",
 }
+
+DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 
 
 def require_env(name: str) -> str:
@@ -49,15 +57,29 @@ def resolve_api_key() -> str | None:
     return path.read_text().strip() if path.exists() else None
 
 
+def resolve_working_dir() -> str:
+    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
+    if not path.exists():
+        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return str(path)
+
+
 def main() -> None:
     api_key = require_env("LLM_API_KEY")
-    model = require_env("LLM_MODEL")
-    model_security = os.environ.get("LLM_MODEL_SECURITY", model)
+    model = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
     use_docker = "--docker" in sys.argv
+    working_dir = resolve_working_dir()
 
     llm = LLM(usage_id="agent", model=model, api_key=SecretStr(api_key))
-    security_llm = LLM(usage_id="security-analyzer", model=model_security, api_key=SecretStr(api_key))
+    security_analyzer = EnsembleSecurityAnalyzer(
+        analyzers=[
+            PolicyRailSecurityAnalyzer(),
+            PatternSecurityAnalyzer(),
+            LLMSecurityAnalyzer(),
+        ],
+    )
 
     tools = [
         Tool(name=TerminalTool.name),
@@ -77,12 +99,13 @@ def main() -> None:
         workspace = DockerWorkspace(
             server_image="ghcr.io/openhands/agent-server:latest-python",
             host_port=8010,
+            mount_dir=working_dir,
         )
     else:
         workspace = Workspace(
             host=server,
             api_key=resolve_api_key(),
-            working_dir=tempfile.mkdtemp(prefix="p05_safety_"),
+            working_dir=working_dir,
         )
 
     # Parse prompt key from args (skip --docker)
@@ -90,11 +113,11 @@ def main() -> None:
     prompt_key = args[0] if args and args[0] in PROMPTS else "read"
     prompt = PROMPTS[prompt_key]
 
-    conversation = Conversation(agent=agent, workspace=workspace, visualize=True)
+    conversation = Conversation(agent=agent, workspace=workspace)
     assert isinstance(conversation, RemoteConversation)
 
-    conversation.set_security_analyzer(LLMSecurityAnalyzer(llm=security_llm))
-    conversation.set_confirmation_policy(ConfirmRisky())
+    conversation.set_security_analyzer(security_analyzer)
+    conversation.set_confirmation_policy(ConfirmRisky(threshold=SecurityRisk.MEDIUM))
 
     try:
         t0 = time.time()

@@ -72,15 +72,37 @@ All scripts are designed to be run with `uv run`:
 
 ```bash
 cd projects/p01-agent-trace/starter
+WORKSPACE_DIR=/path/to/agent-canvas \
 uv run --with openhands-sdk --with openhands-tools python run_baseline.py
 ```
 
-Required environment variables for every script:
+The early project scripts use the local agent server from the quickstart. That
+is useful for learning because you can inspect every API call and filesystem
+effect directly, but it is not the right safety boundary for real work. Keep
+`WORKSPACE_DIR` pointed at a scratch clone or a repo you can restore until P05,
+where the runner moves into `DockerWorkspace`.
+
+Required environment variable for every live agent script:
 
 ```bash
 export LLM_API_KEY="sk-..."
-export LLM_MODEL="anthropic/claude-sonnet-4-5-20250929"
 ```
+
+`LLM_MODEL` is optional. If omitted, the scripts use
+`anthropic/claude-sonnet-4-5-20250929` (Sonnet 4.5). You can also use the
+repo-level `.env.example`:
+
+```bash
+cd /path/to/learn-openhands-harness
+cp .env.example .env
+# Edit .env, then:
+set -a
+source .env
+set +a
+```
+
+`WORKSPACE_DIR` should point at the repo you are studying. If omitted, the
+scripts use the current directory.
 
 ---
 

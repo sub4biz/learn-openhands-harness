@@ -184,16 +184,29 @@ The talk's slide 86 prescribes four tiers; OpenHands gives you two composable pi
 | Prompt for network / unfamiliar | `ConfirmRisky()` with analyzer scoring `HIGH` | Conversation enters `WAITING_FOR_CONFIRMATION`; canvas surfaces the action for you to approve or reject |
 | Require explicit approval for destructive | `AlwaysConfirm()` | Every action requires explicit yes; rejection feeds a string back to the agent so it can try a different approach |
 
-`ConfirmRisky()` only does anything if you also attach an analyzer. The shipped `LLMSecurityAnalyzer` runs a separate cheap LLM (its own `usage_id="security-analyzer"`, which is exactly why the registry pattern from §2.1 matters) to score each action `LOW` / `MEDIUM` / `HIGH` / `UNKNOWN`. You can swap in a rule-based or hybrid analyzer (the [defense-in-depth](https://docs.openhands.dev/sdk/guides/security#defense-in-depth-security-analyzer) pattern) without changing the policy.
+`ConfirmRisky()` only does anything if you also attach an analyzer. In the current SDK, `LLMSecurityAnalyzer` reads the action's model-provided `security_risk` field; deterministic analyzers such as `PolicyRailSecurityAnalyzer` and `PatternSecurityAnalyzer` catch known dangerous structures and signatures. Compose them with `EnsembleSecurityAnalyzer` when you want both model-facing policy and hard-coded guardrails.
 
 Wired up:
 
 ```python
-from openhands.sdk.security.confirmation_policy import ConfirmRisky
-from openhands.sdk.security.llm_analyzer import LLMSecurityAnalyzer
+from openhands.sdk.security import (
+    ConfirmRisky,
+    EnsembleSecurityAnalyzer,
+    LLMSecurityAnalyzer,
+    PatternSecurityAnalyzer,
+    PolicyRailSecurityAnalyzer,
+    SecurityRisk,
+)
 
-conversation.set_security_analyzer(LLMSecurityAnalyzer(llm=cheap_llm))
-conversation.set_confirmation_policy(ConfirmRisky())
+analyzer = EnsembleSecurityAnalyzer(
+    analyzers=[
+        PolicyRailSecurityAnalyzer(),
+        PatternSecurityAnalyzer(),
+        LLMSecurityAnalyzer(),
+    ],
+)
+conversation.set_security_analyzer(analyzer)
+conversation.set_confirmation_policy(ConfirmRisky(threshold=SecurityRisk.MEDIUM))
 ```
 
 When the agent emits an action, the loop pauses with `execution_status == WAITING_FOR_CONFIRMATION`. You drain `ConversationState.get_unmatched_actions(...)`, decide, and either let `conversation.run()` proceed or call `conversation.reject_pending_actions("reason here")`. The rejection string goes back into the loop as feedback, which is how the agent learns to try a different approach instead of retrying the same blocked thing.
@@ -209,7 +222,7 @@ OpenHands exposes this as three separate layers:
 | Layer | SDK surface | What it controls |
 |---|---|---|
 | Policy language | `Agent(..., security_policy_filename="org_security_policy.j2")` | The organization's LOW / MEDIUM / HIGH guidance rendered into the agent's system prompt |
-| Risk classification | `LLMSecurityAnalyzer`, custom analyzers, or an ensemble | The risk label assigned to each proposed action |
+| Risk classification | `LLMSecurityAnalyzer`, deterministic analyzers, custom analyzers, or an ensemble | The risk label assigned to each proposed action |
 | Execution control | `ConfirmRisky()`, `AlwaysConfirm()`, sandbox choice, hooks | Whether the action runs, pauses for approval, or is rejected by code |
 
 The distinction matters. A custom `security_policy_filename` guides the model's own risk assessment, but it is still model-facing text. The analyzer classifies. The confirmation policy creates operator friction. For a hard deny ("never exfiltrate secrets", "never modify files outside workspace", "never run production deploys"), use deterministic analyzers, hooks, narrow tools, and sandboxing. The security docs call this out directly: analyzers return risk; confirmation policy decides what happens; sandboxing remains a separate safety boundary.
@@ -244,8 +257,8 @@ agent = Agent(
     security_policy_filename="org_security_policy.j2",
 )
 
-conversation.set_security_analyzer(LLMSecurityAnalyzer(llm=security_llm))
-conversation.set_confirmation_policy(ConfirmRisky())
+conversation.set_security_analyzer(analyzer)
+conversation.set_confirmation_policy(ConfirmRisky(threshold=SecurityRisk.MEDIUM))
 ```
 
 If you're teaching this tutorial inside a company, this is the point where the harness becomes policy infrastructure. You are no longer only asking "can the agent solve the task?" You are asking "can every team use the same harness without each engineer inventing their own safety rules?"
@@ -282,11 +295,11 @@ There's a second "architecture" axis: where the agent server runs. Three shapes 
 
 | Shape | Workspace class | When to use |
 |---|---|---|
-| Local subprocess | `Workspace(host="http://127.0.0.1:18000", api_key=...)` | Dev loops on a trusted laptop. What `npm run dev:dangerously-dockerless` gives you. |
-| [Docker sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox) | `DockerWorkspace(server_image=...)` | Anything you don't fully trust. Isolated FS, isolated network, kill-the-container cleanup. |
+| Local subprocess | `Workspace(host="http://127.0.0.1:18000", api_key=...)` | Tutorial loops and disposable scratch repos on a trusted laptop. What `npm run dev:dangerously-dockerless` gives you. |
+| [Docker sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox) | `DockerWorkspace(server_image=...)` | Real work, real repos, package installs, edits, tests, browser automation, or anything you don't fully trust. Isolated FS, isolated network, kill-the-container cleanup. |
 | [API sandbox](https://docs.openhands.dev/sdk/guides/agent-server/api-sandbox) / [Cloud workspace](https://docs.openhands.dev/sdk/guides/agent-server/cloud-workspace) | `APIRemoteWorkspace(...)` | Hosted runtime; no local Docker. Pays for managed isolation. |
 
-Switching from local to Docker is a single class change in the client; the agent code, tools, prompts, and agent trace stay identical. That's the harness boundary doing its job — *where* the work runs is decoupled from *how* it runs.
+Switching from local to Docker is a single class change in the client; the agent code, tools, prompts, and agent trace stay identical. That's the harness boundary doing its job — *where* the work runs is decoupled from *how* it runs. Keep the local subprocess for learning and diagnostics; use Docker before you let the agent make meaningful changes.
 
 The canvas can flip between agent servers at runtime — you can have a "dev" server on `localhost:18000` and a "production-ish" Dockerized one on `localhost:8010`, and just switch the active connection in the UI sidebar. This is more useful than it sounds the first time you accidentally run a destructive task on the wrong server.
 

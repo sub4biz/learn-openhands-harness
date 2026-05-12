@@ -18,7 +18,7 @@
 
 - Same model + tools + retrieval policy from P01-P03.
 - Two configurations (and one optional):
-  - **A — no `AGENTS.md`:** `git rm AGENTS.md` in your test repo (or use a fresh checkout that doesn't have one).
+  - **A — no `AGENTS.md`:** the scripts copy `WORKSPACE_DIR` to a temp directory and remove `AGENTS.md` there, so your original repo is not touched.
   - **B — minimal `AGENTS.md`:** three to five lines, hand-written, describing the directory layout and any non-obvious conventions. Don't auto-generate it.
   - **C (optional) — auto-generated `AGENTS.md`:** let the agent write it itself in a previous conversation. Feed that one in.
 

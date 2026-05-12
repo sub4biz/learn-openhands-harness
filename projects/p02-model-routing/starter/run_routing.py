@@ -3,13 +3,13 @@
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_routing.py
 
-Required env vars:  LLM_API_KEY, LLM_MODEL
-Optional:           LLM_MODEL_SMALL, AGENT_SERVER
+Required env vars:  LLM_API_KEY
+Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
+                    LLM_MODEL_SMALL, AGENT_SERVER, WORKSPACE_DIR
 """
 
 import os
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -21,6 +21,8 @@ PROMPT = (
     "Find every place VITE_BACKEND_HOST is read or set, "
     "and write a short note explaining how the dev script picks the backend."
 )
+
+DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 
 
 def require_env(name: str) -> str:
@@ -39,15 +41,23 @@ def resolve_api_key() -> str | None:
     return path.read_text().strip() if path.exists() else None
 
 
-def run_config(label: str, llm: LLM, server: str) -> dict:
+def resolve_working_dir() -> str:
+    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
+    if not path.exists():
+        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return str(path)
+
+
+def run_config(label: str, llm: LLM, server: str, working_dir: str) -> dict:
     """Run the prompt with the given LLM and return metrics."""
     agent = get_default_agent(llm=llm, cli_mode=True)
     workspace = Workspace(
         host=server,
         api_key=resolve_api_key(),
-        working_dir=tempfile.mkdtemp(prefix=f"p02_{label}_"),
+        working_dir=working_dir,
     )
-    conversation = Conversation(agent=agent, workspace=workspace, visualize=True)
+    conversation = Conversation(agent=agent, workspace=workspace)
     assert isinstance(conversation, RemoteConversation)
 
     try:
@@ -71,8 +81,9 @@ def run_config(label: str, llm: LLM, server: str) -> dict:
 
 def main() -> None:
     api_key = require_env("LLM_API_KEY")
-    model_flagship = require_env("LLM_MODEL")
+    model_flagship = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
+    working_dir = resolve_working_dir()
 
     # --- Config A: flagship ---
     flagship_llm = LLM(
@@ -95,14 +106,14 @@ def main() -> None:
     results = []
 
     print("\n--- Config A: flagship ---")
-    results.append(run_config("flagship", flagship_llm, server))
+    results.append(run_config("flagship", flagship_llm, server, working_dir))
 
     # TODO: uncomment once you've created small_llm and router_llm
     # print("\n--- Config B: small ---")
-    # results.append(run_config("small", small_llm, server))
+    # results.append(run_config("small", small_llm, server, working_dir))
     #
     # print("\n--- Config C: routed ---")
-    # results.append(run_config("routed", router_llm, server))
+    # results.append(run_config("routed", router_llm, server, working_dir))
 
     print("\n" + "=" * 70)
     print(f"{'Config':<12} {'Events':>7} {'Wall':>8} {'Cost':>10} {'Tokens in':>12} {'Tokens out':>12}")

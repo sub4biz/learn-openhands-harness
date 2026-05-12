@@ -12,7 +12,7 @@
 | Directory | What's inside |
 |---|---|
 | `starter/` | `harness.py` — skeleton with imports and TODO placeholders for every kept artifact from P01-P05. |
-| `solution/` | `harness.py` — complete capstone wiring routing, tools, security policy, Docker sandbox, and critic. |
+| `solution/` | `harness.py` — complete capstone wiring routing, tools, security policy, Docker sandbox, and a critic placeholder you can enable after P06a. |
 
 ---
 
@@ -60,9 +60,9 @@ The talk is unambiguous on slide 97: a critic is the multi-agent pattern that ea
 
 1. Open `starter/harness.py`. Fill in the TODO blocks with the artifacts you kept from P01-P06a.
 2. Pick a fresh repo you haven't run the agent against — a public open-source library you actually use is best.
-3. Run `python harness.py "your real task"`.
+3. Run `WORKSPACE_DIR=/path/to/repo uv run --with openhands-sdk --with openhands-tools --with openhands-workspace python harness.py "your real task"`.
 4. Watch the agent trace. Confirm:
-   - The router actually splits work between flagship and small (read per-`usage_id` metrics).
+   - The router sends work to the expected model leg (read per-`usage_id` metrics).
    - Your tool list is the active one.
    - Your `AGENTS.md` was loaded (the first event in the conversation should reflect it).
    - Your `org_security_policy.j2` is reflected in the agent's system message.

@@ -3,13 +3,14 @@
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_baseline.py
 
-Required env vars:  LLM_API_KEY, LLM_MODEL
-Optional:           AGENT_SERVER (default http://127.0.0.1:18000)
+Required env vars:  LLM_API_KEY
+Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
+                    AGENT_SERVER (default http://127.0.0.1:18000)
+                    WORKSPACE_DIR (default current directory)
 """
 
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 from pydantic import SecretStr
@@ -20,6 +21,8 @@ PROMPT = (
     "Find every place VITE_BACKEND_HOST is read or set, "
     "and write a short note explaining how the dev script picks the backend."
 )
+
+DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 
 
 def require_env(name: str) -> str:
@@ -38,9 +41,17 @@ def resolve_api_key() -> str | None:
     return path.read_text().strip() if path.exists() else None
 
 
+def resolve_working_dir() -> str:
+    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
+    if not path.exists():
+        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return str(path)
+
+
 def main() -> None:
     api_key = require_env("LLM_API_KEY")
-    model = require_env("LLM_MODEL")
+    model = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
 
     llm = LLM(usage_id="agent", model=model, api_key=SecretStr(api_key))
@@ -49,9 +60,9 @@ def main() -> None:
     workspace = Workspace(
         host=server,
         api_key=resolve_api_key(),
-        working_dir=tempfile.mkdtemp(prefix="p01_baseline_"),
+        working_dir=resolve_working_dir(),
     )
-    conversation = Conversation(agent=agent, workspace=workspace, visualize=True)
+    conversation = Conversation(agent=agent, workspace=workspace)
     assert isinstance(conversation, RemoteConversation)
 
     try:

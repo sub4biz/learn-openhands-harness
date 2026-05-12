@@ -11,6 +11,51 @@ The point of this tutorial isn't to teach you how to install OpenHands. It's to 
 
 ---
 
+## Model credentials upfront
+
+Live agent runs need one secret: `LLM_API_KEY`. The checked-in SDK scripts default
+to Sonnet 4.5 via `anthropic/claude-sonnet-4-5-20250929`, so `LLM_MODEL` is
+optional unless you want to override the model.
+
+```bash
+cp .env.example .env
+# Edit .env and set LLM_API_KEY to a provider key.
+set -a
+source .env
+set +a
+```
+
+The optional knobs are `LLM_MODEL` for the main model, `LLM_MODEL_SMALL` for
+routing experiments, and `WORKSPACE_DIR` for the repo the agent should inspect.
+Never commit a real `.env`, and don't paste provider keys into prompts, issues,
+or chat. If a key leaks, rotate it.
+
+---
+
+## Safety posture
+
+This tutorial starts dockerless on purpose because it is the easiest way to see
+the agent server, HTTP API, filesystem, and trace without another layer in the
+way. Treat that mode as a learning microscope, not a safe operating mode.
+
+`npm run dev:dangerously-dockerless` runs tool calls on your host machine. If
+you point it at a real repo, the agent can edit files there; if a task or tool
+goes sideways, it is too easy to damage your working tree or local environment.
+Use Docker for any real work, any repo you care about, or any task that may run
+commands beyond simple read-only inspection.
+
+Rule of thumb:
+
+- **Dockerless:** tutorial walkthroughs, disposable scratch repos, trusted
+  read-only exploration.
+- **Docker:** real repositories, package installs, code edits, tests, browser
+  automation, unfamiliar prompts, or anything you would not run manually.
+
+P05 turns this into a `DockerWorkspace` runner. Until then, keep `WORKSPACE_DIR`
+pointed at a scratch clone or a repo you are comfortable restoring.
+
+---
+
 ## Why this stack
 
 There are good harnesses you can't see (Claude Code, Codex CLI, Cursor) and good ones you can (SWE-agent, OpenHands, deepagents). For learning, only the open ones work — you need to read the code to understand what a harness *is*.
@@ -51,10 +96,10 @@ Each project follows the [walkinglabs/learn-harness-engineering](https://github.
 - macOS or Linux. Windows works but the canvas dev script assumes a POSIX shell.
 - **Node.js 22.12+** and `npm` for the canvas frontend.
 - **`uv`** ([install](https://docs.astral.sh/uv/getting-started/installation/)) — the dockerless canvas dev script uses `uvx` to spawn an agent-server subprocess on `127.0.0.1:18000` and the automation backend on `127.0.0.1:18001`. You don't need to `pip install` anything yourself.
-- **An LLM API key** — Anthropic, OpenAI, or anything else [LiteLLM](https://docs.litellm.ai/docs/providers) understands. Examples here use `anthropic/claude-sonnet-4-5-20250929`. The canvas stores this in its LLM settings; the SDK examples read `LLM_API_KEY` / `LLM_MODEL` from your shell. Subscription login (`LLM.subscription_login()`) is supported if you'd rather not burn API credits.
-- **Docker** is optional. The quickstart uses the explicit no-Docker command so you can inspect the local process directly. Use Docker once you are ready to bound the agent's filesystem access.
+- **An LLM API key** — Anthropic, OpenAI, or anything else [LiteLLM](https://docs.litellm.ai/docs/providers) understands. The canvas stores this in its LLM settings; the SDK examples read `LLM_API_KEY` from your shell and default `LLM_MODEL` to Sonnet 4.5. Subscription login (`LLM.subscription_login()`) is supported if you'd rather not burn API credits.
+- **Docker** is optional for the first walkthrough, but recommended for real work. The quickstart uses the explicit no-Docker command so you can inspect the local process directly; move to Docker before pointing the agent at anything important.
 
-> Heads up: `npm run dev:dangerously-dockerless` runs the agent server directly on your machine. It can read and write the working directory you give it, and broader filesystem access is possible through shell tools. The Docker walkthrough in the tour reduces that blast radius; do that before you point the agent at anything you care about.
+> Heads up: `npm run dev:dangerously-dockerless` runs the agent server directly on your machine. It can read and write the working directory you give it, and broader filesystem access is possible through shell tools. Use it for learning and scratch work only. Use Docker before you point the agent at anything you care about.
 
 ---
 

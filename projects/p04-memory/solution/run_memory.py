@@ -3,8 +3,10 @@
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_memory.py
 
-Required env vars:  LLM_API_KEY, LLM_MODEL
-Optional:           AGENT_SERVER (default http://127.0.0.1:18000)
+Required env vars:  LLM_API_KEY
+Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
+                    AGENT_SERVER (default http://127.0.0.1:18000)
+                    WORKSPACE_DIR (default current directory)
 """
 
 import os
@@ -23,7 +25,18 @@ PROMPT = (
     "and write a short note explaining how the dev script picks the backend."
 )
 
+DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
+
 AGENTS_MD = Path(__file__).parent / "AGENTS.md"
+IGNORE_PATTERNS = shutil.ignore_patterns(
+    ".git",
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    ".next",
+    "dist",
+    "build",
+)
 
 
 def require_env(name: str) -> str:
@@ -42,6 +55,20 @@ def resolve_api_key() -> str | None:
     return path.read_text().strip() if path.exists() else None
 
 
+def resolve_working_dir() -> str:
+    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
+    if not path.exists():
+        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return str(path)
+
+
+def copy_workspace(source: str, prefix: str) -> str:
+    destination = Path(tempfile.mkdtemp(prefix=prefix)) / "repo"
+    shutil.copytree(source, destination, ignore=IGNORE_PATTERNS)
+    return str(destination)
+
+
 def run_config(label: str, llm: LLM, server: str, working_dir: str) -> dict:
     agent = get_default_agent(llm=llm, cli_mode=True)
     workspace = Workspace(
@@ -49,7 +76,7 @@ def run_config(label: str, llm: LLM, server: str, working_dir: str) -> dict:
         api_key=resolve_api_key(),
         working_dir=working_dir,
     )
-    conversation = Conversation(agent=agent, workspace=workspace, visualize=True)
+    conversation = Conversation(agent=agent, workspace=workspace)
     assert isinstance(conversation, RemoteConversation)
 
     try:
@@ -72,16 +99,18 @@ def run_config(label: str, llm: LLM, server: str, working_dir: str) -> dict:
 
 def main() -> None:
     api_key = require_env("LLM_API_KEY")
-    model = require_env("LLM_MODEL")
+    model = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
+    source_dir = resolve_working_dir()
 
     llm = LLM(usage_id="agent", model=model, api_key=SecretStr(api_key))
 
     # --- Config A: no AGENTS.md ---
-    dir_no_memory = tempfile.mkdtemp(prefix="p04_no_memory_")
+    dir_no_memory = copy_workspace(source_dir, "p04_no_memory_")
+    Path(dir_no_memory, "AGENTS.md").unlink(missing_ok=True)
 
     # --- Config B: with AGENTS.md ---
-    dir_with_memory = tempfile.mkdtemp(prefix="p04_with_memory_")
+    dir_with_memory = copy_workspace(source_dir, "p04_with_memory_")
     if AGENTS_MD.exists():
         shutil.copy(AGENTS_MD, Path(dir_with_memory) / "AGENTS.md")
     else:
