@@ -125,7 +125,7 @@ Your agent ran as a single process on your laptop, with direct access to your fi
 
 Switching from local to Docker is a one-line change in your Python code: swap `Workspace(...)` for `DockerWorkspace(...)`. The agent code, tools, prompts, and trace stay identical. Where the work runs is separate from how it runs.
 
-There's also a "how many agents" axis. Your task ran as a single agent. For harder tasks you might want [sub-agent delegation](https://docs.openhands.dev/sdk/guides/agent-delegation) (spawn a child for a bounded subtask) or a [critic](https://docs.openhands.dev/sdk/guides/critic) (a second LLM that reviews the first agent's work). Default to single. Multi-agent adds coordination cost that has to earn itself. [P06](./projects/p06-capstone/) is where you optionally add a critic.
+There's also a "how many agents" axis. Your task ran as a single agent. For harder tasks you might want [sub-agent delegation](https://docs.openhands.dev/sdk/guides/agent-delegation) (spawn a child for a bounded subtask) or a [critic](https://docs.openhands.dev/sdk/guides/critic) (a second LLM that reviews the first agent's work). Default to single. Multi-agent adds coordination cost that has to earn itself. [P06](./projects/p06-capstone/) is where you optionally add a critic. For a full multi-agent pipeline (implement, test, review across different harnesses), see the [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo).
 
 ---
 
@@ -173,3 +173,5 @@ The [projects](./projects/) take each of these five parts and have you change it
 | [P04: Memory](./projects/p04-memory/) | `AGENTS.md` and condensers | How prior knowledge changes behavior |
 | [P05: Safety](./projects/p05-safety/) | Security policy + Docker | Bounding what the agent can do |
 | [P06: Capstone](./projects/p06-capstone/) | Everything, wired together | A production-shaped harness |
+
+For real-world tasks to throw at your harness beyond the tutorial prompt, the [OpenHands use cases overview](https://docs.openhands.dev/openhands/usage/use-cases/overview) covers migrations, test generation, documentation, and more.
