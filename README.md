@@ -75,7 +75,7 @@ The OpenHands [post-mortem on Claude Code's recent regression](https://www.anthr
 | Step | Where | What it covers |
 |---|---|---|
 | 1 | [`01-quickstart.md`](./01-quickstart.md) | Install, run agent server + canvas, send your first message, confirm the loop |
-| 2 | [`02-harness-tour.md`](./02-harness-tour.md) | Map the five levers to concrete code paths and HTTP endpoints — including LLM routing, organization security profiles, named confirmation policies, and an honest note on what OpenHands doesn't ship |
+| 2 | [`02-harness-tour.md`](./02-harness-tour.md) | Run one real task, read the trace, and see the five parts of a harness — model, tools, memory, safety, and architecture — in the context of what actually happened |
 | 3 | [`projects/`](./projects/) | Six projects, each with a `starter/` and `solution/`, each producing a config artifact, ending with a runnable `harness.py` capstone |
 
 Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each project's solution becomes the next project's foundation; by P06 you have a complete `harness.py` and an evaluation trace you can defend.
@@ -128,7 +128,7 @@ A short, opinionated bibliography. None of it is required, but each piece earns 
 In order. Each step depends on the previous one being live.
 
 1. **[Quickstart](./01-quickstart.md)** — get a green health check and a working canvas in front of you. Skip nothing here.
-2. **[Harness tour](./02-harness-tour.md)** — with the system running, walk through where each of the five levers actually lives.
+2. **[Harness tour](./02-harness-tour.md)** — give the agent a real task, read the trace, and see the five parts of a harness in action.
 3. **[Projects](./projects/)** — six projects, each with a `starter/` and `solution/`. Change one thing at a time, save what you keep, move on. Don't read the next project before finishing the current one. The capstone (P06) is where the keepers compose into a single `harness.py`.
 
 There's a small `scripts/` directory with the helper scripts the quickstart references.

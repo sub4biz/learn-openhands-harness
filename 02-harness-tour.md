@@ -1,335 +1,198 @@
-# 2 — Harness Tour: Where the Five Levers Actually Live
+# 2 — Harness Tour: One Task, Five Moving Parts
 
-The thesis from the talk: a coding agent is `Model + Harness`, and the harness is the part you tune. The five levers are model, retrieval, memory, loops, and architecture. They're abstract until you can point at the line of code that implements each one.
+A coding agent is not just a model. It's a model wrapped in a **harness** — the code that decides which model to call, what tools it can use, what it remembers, how the loop runs, and where the work happens. Every coding-agent product (Claude Code, Codex CLI, Cursor, OpenHands) ships a harness. The difference is whether you can see it.
 
-This tour does that, using the running OpenHands stack from the [quickstart](./01-quickstart.md). For each lever, we'll find the file, the API surface, and the canvas affordance — and call out what's tunable vs. what's baked in.
+In this tour you'll give the agent a real task, watch it work, and then walk through the trace to see each part of the harness in action. By the end, you'll know what a harness is made of — and what the [projects](./projects/) will have you change.
 
-The agent trace is the microscope for the whole tour. OpenHands represents it internally as a stream of typed events, but the teaching idea is simpler: it is the chronological record of what the agent run did. MCP, hooks, and custom tools are useful, but they are not the differentiator by themselves. The differentiator is that you can inspect the loop state, memory compression, workspace boundary, safety policy, and verification trace instead of trusting a closed product default.
-
-For each lever, ask three questions: what choice did this harness make, what other choices were available, and when would you pick a different one?
-
-> Open three terminals before you start: one tailing the agent-server logs from `npm run dev:dangerously-dockerless`, one for `curl`/`uv run` against the API, and one to keep this file open.
+> **Prerequisites:** a running agent server and canvas from the [quickstart](./01-quickstart.md), and the `agent-canvas` repo cloned locally.
 
 ---
 
-## 2.1 Lever 1 — Model: who's reasoning, and how do you tell?
+## 2.1 Give it a real task
 
-The "model" lever isn't only "which LLM." It's:
+Open the canvas at `http://localhost:8000`. Start a new conversation and paste this prompt:
 
-- Which provider/model name (LiteLLM string).
-- Which auth path (`api_key`, `subscription_login`, `base_url`).
-- Which `usage_id` — multiple LLMs can coexist in one conversation (e.g. a `title-gen-llm` for cheap title generation, separate from the main agent LLM).
-- Which "preset" wraps it — the SDK ships `get_default_agent()` which bundles a tool selection, system prompt, and skill set per model family.
-
-### Where it lives
-
-- **SDK side:** `openhands.sdk.LLM` and `openhands.tools.preset.default.get_default_agent`. See [`software-agent-sdk/examples/01_standalone_sdk/01_hello_world.py`](https://github.com/OpenHands/software-agent-sdk/blob/main/examples/01_standalone_sdk/01_hello_world.py) for the canonical wiring.
-- **Server side:** `POST /api/conversations` accepts the agent definition. The server stores it; subsequent messages route through the same agent.
-- **Canvas side:** the model picker in the new-conversation modal. Under the hood it builds the same agent definition and posts it.
-
-### What you can change
-
-The basic case — one model, swap the string:
-
-```python
-llm = LLM(
-    usage_id="agent",                         # logical name
-    model="anthropic/claude-sonnet-4-5-20250929",
-    base_url=os.getenv("LLM_BASE_URL"),       # for self-hosted / proxy
-    api_key=SecretStr(os.environ["LLM_API_KEY"]),
-)
+```
+Find every place VITE_BACKEND_HOST is read or set in this project,
+and write a short note explaining how the dev script picks the backend.
 ```
 
-LiteLLM resolves the `provider/model` string. You can swap `openai/gpt-5-mini-2025-08-07`, a Bedrock route, or a local Ollama via `base_url`. The harness doesn't care.
+This is the prompt you'll reuse across all six projects. It's a good harness test because it requires searching across files, reading what it finds, and producing a written summary — but it doesn't modify anything.
 
-Use the simplest model setup that clears the task. Reach for routing when one model is too expensive for every call, too weak for hard calls, or missing a capability such as vision.
-
-### The model lever has a second knob: routing
-
-A real harness rarely uses one model for everything. Cheap calls go to a small model; hard calls go to a flagship; vision calls go to a multimodal one. OpenHands exposes this two ways:
-
-- **[`LLMRegistry`](https://docs.openhands.dev/sdk/guides/llm-registry)** — a name-keyed bag of `LLM` instances. You build them once at startup, look them up by `usage_id`. The SDK already uses it internally — note the `title-gen-llm` distinct from `agent` in the [local-server example](https://docs.openhands.dev/sdk/guides/agent-server/local-server). Title generation goes to a cheap model; the main loop goes to your flagship. That's a real cost lever, not a curiosity.
-- **[Model Routing](https://docs.openhands.dev/sdk/guides/llm-routing)** — `RouterLLM` subclasses (e.g. `MultimodalRouter`) that act *as* an `LLM`. Pass one to `Agent(llm=router, ...)` and the router decides per-message which underlying model to call. The shipped `MultimodalRouter` switches between a primary and a secondary based on whether the message contains images:
-
-  ```python
-  from openhands.sdk.llm.router import MultimodalRouter
-
-  multimodal = MultimodalRouter(
-      usage_id="multimodal-router",
-      llms_for_routing={"primary": flagship_llm, "secondary": cheap_llm},
-  )
-  agent = Agent(llm=multimodal, tools=tools)
-  ```
-
-  Subclass `RouterLLM` and implement `select_llm()` for your own policy — keyword-based, complexity-based, latency-based. This is the same pattern the talk's slide-22 framing implies but most operators never wire up.
-
-### What you can measure
-
-`conversation.conversation_stats.get_combined_metrics()` returns tokens, cost, and latency per `usage_id`. That's the right granularity — you want to compare the *same* harness across two LLMs, not "the cost of running OpenHands." With a router in place, each leg shows up under its own `usage_id` so you can see exactly which calls went where.
-
-> **Pointer to the talk:** slide 11 ("Same model, 2× performance gap") — model picks matter less than harness picks. The way you check that for *your* task is by changing only the `model` argument and rerunning the same conversation, *or* by changing only the routing policy and watching where the cost lands. Everything else in this tour stays constant.
+Watch the agent work. When it finishes, come back here.
 
 ---
 
-## 2.2 Lever 2 — Retrieval: how the agent finds code
+## 2.2 Read the trace
 
-Most "RAG" assumptions don't apply to coding agents. The default OpenHands tools are lexical and file-based, in line with the talk's [retrieval rules](https://github.com/rajshah4/harness-engineering#retrieval): grep first, semantics only when vocabulary mismatch hurts you.
+Click into the conversation in the canvas. You'll see a list of events, top to bottom:
 
-### Where it lives
+1. **Your message** — the prompt you sent.
+2. **Tool calls** — the agent decided to run `terminal` (probably `grep -rn VITE_BACKEND_HOST`) or `file_editor` (to read a file).
+3. **Tool results** — what came back from each tool call.
+4. **More tool calls** — maybe it grepped, then read specific files, then grepped again.
+5. **A final message** — the agent's written answer.
 
-The default agent tool set (`get_default_agent`) ships with these retrieval-shaped tools:
+This sequence is the **agent trace**. It's the chronological record of everything the harness did — every decision, every tool call, every result. It's also what makes an open harness different from a closed one: you're not guessing what happened, you're reading it.
 
-- **`terminal`** — shell access for `grep -rn`, `rg`, `find`, `git log`. The lexical baseline.
-- **`file_editor`** — read and edit whole files when they fit in context. This is the "files instead of chunking" rule from slide 36.
-- **`task_tracker`** — a small tool, not retrieval per se, but it stops the agent from re-querying for context it already has by writing it down.
+Count the events. Note what tools the agent used, how many times, and in what order. You'll compare this baseline against different harness configurations in the projects.
 
-There is no built-in vector store. You can wire one in via [MCP](https://docs.openhands.dev/sdk/guides/mcp) — point the agent at a server that exposes a `search_code` tool — but that is an explicit choice, not a default. The same pattern applies to web search or docs search: add it when the agent needs current information or vocabulary that is not present in the repo, not because "more retrieval" is automatically better.
+> The trace is built on OpenHands' [Event](https://docs.openhands.dev/sdk/arch/events) framework. Each row is one typed event. The SDK exposes the same data via `conversation.state.events`, and `conversation.conversation_stats.get_combined_metrics()` gives you token counts and cost.
 
-### What you can change
+---
 
-In the SDK:
+## 2.3 Part 1 — The model
+
+Somewhere in that trace, an LLM read the context and decided what to do next. Which model was it?
+
+If you used the canvas defaults, it's whatever you configured in the model picker. If you ran `quickstart.py`, it's the `LLM_MODEL` you exported (or the Sonnet 4.5 default). Either way, one model did all the work — reasoning, tool selection, and writing the answer.
+
+That's fine for a first run. But it's also the most expensive configuration. In a real harness, you might want:
+
+- A **cheap model** for simple tasks (title generation, quick lookups).
+- A **flagship model** for hard reasoning.
+- A **router** that picks between them per-call based on complexity or content.
+
+OpenHands supports all three through `LLM`, [`LLMRegistry`](https://docs.openhands.dev/sdk/guides/llm-registry), and [`RouterLLM`](https://docs.openhands.dev/sdk/guides/llm-routing). [P02](./projects/p02-model-routing/) has you wire up a router and compare the cost.
+
+**The point:** the model is one part of the harness. Swapping it changes cost and capability, but the rest of the harness — tools, memory, safety, architecture — stays the same. That separation is what makes the harness tunable.
+
+---
+
+## 2.4 Part 2 — The tools (retrieval)
+
+Look at the tool calls in your trace. The agent probably used:
+
+- **`terminal`** — to run `grep`, `find`, or `rg` in the shell. This is lexical search: exact string matching across files.
+- **`file_editor`** — to read specific files it found interesting.
+- Maybe **`task_tracker`** — to write down what it found so far.
+
+That's it. No vector database, no embeddings, no RAG pipeline. The agent found code by grepping for it, the same way you would. For exact symbol names like `VITE_BACKEND_HOST`, grep is fast and reliable.
+
+But what if the prompt had been vaguer — "How does the canvas pick which backend to talk to?" Same question, different words. Grep for `VITE_BACKEND_HOST` won't work if you don't know that name yet. That's the vocabulary-mismatch problem, and it's when semantic search (via [MCP](https://docs.openhands.dev/sdk/guides/mcp)) earns its place in the tool list.
+
+The tools the agent can use are set when the conversation starts. You choose them:
 
 ```python
-from openhands.sdk import Tool
-from openhands.tools.terminal import TerminalTool
-from openhands.tools.file_editor import FileEditorTool
-
 agent = Agent(
     llm=llm,
     tools=[
-        Tool(name=TerminalTool.name),     # terminal → grep, rg, find
-        Tool(name=FileEditorTool.name),   # file reads and schema-checked edits
-        # add an MCP-backed tool here only when grep fails for vocabulary reasons
+        Tool(name=TerminalTool.name),    # grep, find, shell commands
+        Tool(name=FileEditorTool.name),  # read and edit files
     ],
 )
 ```
 
-In the canvas: new conversations use `terminal`, `file_editor`, and `task_tracker` by default. If the server advertises `browser_tool_set`, the canvas includes it unless you start the frontend with `VITE_ENABLE_BROWSER_TOOLS=false`.
-
-### What to actually inspect
-
-Open a finished conversation in the canvas. Filter the agent trace to tool calls. Count: how many `terminal` / `grep` invocations did the model make before writing code? On a 100-file repo, three or four is healthy; thirty is a sign of a missing index.
-
-> **Tour exercise:** run the same `find where the canvas reads VITE_BACKEND_HOST` query against a clone of `agent-canvas`, once with only `terminal` + `file_editor` and once with an MCP semantic-search server attached. Compare turn count, total tokens, and whether either agent hallucinated a path. (We do this for real in [P03 — Retrieval](./projects/p03-retrieval/).)
-
-Do not expect semantic search to win every time. For exact symbols, lexical search should usually win. Semantic search earns its slot when the user's words and the code's words do not match.
+Add a tool, and the agent can reach for it. Remove one, and it can't. The tool list is the harness deciding what kind of retrieval the agent is allowed to do. [P03](./projects/p03-retrieval/) has you compare lexical-only against lexical + semantic.
 
 ---
 
-## 2.3 Lever 3 — Memory: what survives, and where it sits
+## 2.5 Part 3 — Memory
 
-The talk's three layers — active context, working state, durable memory — all map to concrete OpenHands surfaces.
+Now ask: what did the agent know about this repo before it started searching?
 
-### Active context: condensers
+Nothing. It had your prompt, the system prompt the harness assembled, and the tools. It had to discover the project structure, the file layout, and the conventions from scratch — by grepping and reading.
 
-The system prompt + recent events is the active context. OpenHands abstracts compaction behind the [`Condenser`](https://docs.openhands.dev/sdk/arch/condenser) interface. Different policies can live behind one plugin point — `LLMSummarizingCondenser`, `BrowserOutputCondenser`, etc.
+That's expensive. If this were a repo you work in every day, you'd want the agent to start with some context: "this is a monorepo, the frontend is in `apps/canvas`, the backend is in `apps/server`, config lives in `.env` files." That's what **`AGENTS.md`** does — a small file at the repo root that the harness reads at conversation start and injects into the system prompt.
 
-- **Server-side:** the condenser runs inside the loop; you don't see it as a separate API call but you see the *result* in the agent trace — older events get replaced by a synthetic summary event.
-- **Canvas-side:** when compaction fires, the canvas renders a "compacted" placeholder so you can tell what was thrown away.
+Memory in a harness has three layers:
 
-This is the openness the talk's slide 49 ("How does Codex do it???") is missing in closed harnesses. You can see *exactly* when compaction triggers and what it kept.
-
-> Reference: [OpenHands context condensation](https://openhands.dev/blog/openhands-context-condensensation-for-more-efficient-ai-agents) reports 2× per-turn cost reduction with equal-or-better SWE task quality.
-
-### Working state: the workspace
-
-The `Workspace` is the agent's filesystem. Plans, scratchpads, partial outputs all live as files in `working_dir`. This is the "files beat chat history" rule from slide 51 made concrete.
-
-- The canvas shows the workspace as a tree on the left, with a file viewer.
-- Conventions like `plan.md`, `progress.md`, `feature_list.json` (see the [walkinglabs course](https://github.com/walkinglabs/learn-harness-engineering)) work here without any framework support — they're just files.
-- The agent re-reads them on every turn that needs them. They're not in active context; they're discoverable through `file_editor` and `terminal`.
-
-### Durable memory: skills and `AGENTS.md`
-
-Across sessions, two things persist:
-
-1. **`AGENTS.md`** at the repo root — read at conversation start, injected into the system prompt. Same format as Codex / Cursor / VS Code support. The talk's caveat (slide 58) holds: auto-generated ones hurt; minimal hand-written ones help.
-2. **[Skills](https://docs.openhands.dev/sdk/guides/skill)** — trigger + reference manual + scripts, loaded on demand. Set `VITE_LOAD_PUBLIC_SKILLS=true` in the canvas `.env` to pull from [`OpenHands/extensions`](https://github.com/OpenHands/extensions).
-
-You evaluate skills the way you evaluate retrieval: with-skill vs. without-skill on the same prompts. There's a worked example at [`rajshah4/evaluating-skills-tutorial`](https://github.com/rajshah4/evaluating-skills-tutorial) — use that pattern.
-
-The optionality is the lesson: compaction protects the active context, files carry working state, and `AGENTS.md` / skills carry durable memory. Use the layer that matches the problem instead of stuffing everything into the system prompt.
-
-### What OpenHands doesn't ship (yet)
-
-Honesty check, because the talk's slide 64 talks about an *outer loop* — the agent updating its own skills across sessions based on what worked. OpenHands has the inputs for this (skills, metrics, experience persistence in conversation state) but doesn't ship the consolidator that turns "task X failed three times the same way" into a new or revised skill file. Other harnesses are starting to wire this up (the Hermes pattern, dream-consolidation designs in some forthcoming systems). If you're studying how harnesses evolve, this is the seam to watch — and a reasonable place to build something yourself, since the building blocks are already exposed.
-
----
-
-## 2.4 Lever 4 — Loops & tools: making the cycle disciplined
-
-The agent loop is the part most outsiders mean when they say "the agent." In OpenHands it's an explicit object with iteration limits, retries, security gates, and a hookable lifecycle.
-
-A simple failure mode to watch for is a stuck loop: the agent repeats the same command, reads the same file, or tries the same broken fix without learning from the observation. Loop governance is the harness work that prevents this from running forever or becoming expensive noise.
-
-### Where it lives
-
-- **`Conversation.run()`** drives the loop. Each iteration: build prompt → call LLM → parse tool calls → dispatch tools → ingest results → repeat or stop.
-- **Hooks** ([guide](https://docs.openhands.dev/sdk/guides/hooks)) let you observe or veto each step. This is where "force hypothesis before action" (slide 78) becomes implementable: a pre-action hook can reject tool calls missing a `hypothesis` field.
-- **Stuck Detector** ([guide](https://docs.openhands.dev/sdk/guides/agent-stuck-detector)) is the harness's defense against Ralph Wiggum loops — it watches for repeated identical actions and kills them.
-- **Confirmation policy + Security analyzer** ([guide](https://docs.openhands.dev/sdk/guides/security)) implement the friction tiers from slide 86 — but it's worth seeing the actual API rather than waving at "the security guide."
-
-Also watch the boring limits: max iterations, timeouts, token budgets, and approval policies. They are governance, not plumbing.
-
-Separate from stuck-loop detection, the "Ralph loop" pattern is about premature stopping: intercepting an attempted final answer, checking it against the completion goal, and continuing in a fresh context when the task is not actually done.
-
-### Friction tiers, named explicitly
-
-The talk's slide 86 prescribes four tiers; OpenHands gives you two composable pieces that, together, cover them. From `openhands.sdk.security.confirmation_policy`:
-
-| Slide-86 tier | OpenHands policy | What happens |
+| Layer | What it is | OpenHands surface |
 |---|---|---|
-| Auto-allow safe (read, grep, ls) | `NeverConfirm()` *or* `ConfirmRisky()` with analyzer scoring `LOW` | Action runs, no prompt |
-| Auto-allow reversible (edit, commit) | `ConfirmRisky()` with analyzer scoring `LOW`/`MEDIUM` | Action runs, no prompt — sandboxed by your `Workspace` choice |
-| Prompt for network / unfamiliar | `ConfirmRisky()` with analyzer scoring `HIGH` | Conversation enters `WAITING_FOR_CONFIRMATION`; canvas surfaces the action for you to approve or reject |
-| Require explicit approval for destructive | `AlwaysConfirm()` | Every action requires explicit yes; rejection feeds a string back to the agent so it can try a different approach |
+| **Active context** | The system prompt + recent events the model can see right now | Managed by [condensers](https://docs.openhands.dev/sdk/arch/condenser) — when context gets too long, older events are summarized or dropped. You can see compaction events in the trace. |
+| **Working state** | Files the agent creates during a run — plans, notes, partial outputs | The workspace filesystem. The agent reads them back with `file_editor` or `terminal`. |
+| **Durable memory** | Knowledge that persists across conversations | [`AGENTS.md`](https://docs.openhands.dev) at the repo root, plus [skills](https://docs.openhands.dev/sdk/guides/skill) loaded on demand. |
 
-`ConfirmRisky()` only does anything if you also attach an analyzer. In the current SDK, `LLMSecurityAnalyzer` reads the action's model-provided `security_risk` field; deterministic analyzers such as `PolicyRailSecurityAnalyzer` and `PatternSecurityAnalyzer` catch known dangerous structures and signatures. Compose them with `EnsembleSecurityAnalyzer` when you want both model-facing policy and hard-coded guardrails.
+Check your trace: did a compaction event fire? On a short task, probably not. On a longer one, you'd see older events replaced by a summary — that's the condenser protecting the context window.
 
-Wired up:
+[P04](./projects/p04-memory/) has you run the same task with and without an `AGENTS.md` and measure the difference. A few lines of hand-written context can save the agent several rounds of exploratory grepping.
 
-```python
-from openhands.sdk.security import (
-    ConfirmRisky,
-    EnsembleSecurityAnalyzer,
-    LLMSecurityAnalyzer,
-    PatternSecurityAnalyzer,
-    PolicyRailSecurityAnalyzer,
-    SecurityRisk,
-)
+---
 
-analyzer = EnsembleSecurityAnalyzer(
-    analyzers=[
-        PolicyRailSecurityAnalyzer(),
-        PatternSecurityAnalyzer(),
-        LLMSecurityAnalyzer(),
-    ],
-)
-conversation.set_security_analyzer(analyzer)
-conversation.set_confirmation_policy(ConfirmRisky(threshold=SecurityRisk.MEDIUM))
+## 2.6 Part 4 — Safety and the loop
+
+The agent ran shell commands on your machine. It could have run `rm -rf`. It could have run `git push`. It could have curled a URL and exfiltrated your source code. Right now, nothing in the harness stopped it.
+
+That's fine for a tutorial on a scratch repo. It's not fine for real work. The harness needs to answer: what is the agent allowed to do automatically, what needs your approval, and what should never run?
+
+OpenHands gives you three layers for this:
+
+- **A security policy** — a template file (`org_security_policy.j2`) that tells the model what's LOW, MEDIUM, and HIGH risk. This guides the model's own judgment but doesn't enforce anything by itself.
+- **Security analyzers** — code that classifies each proposed action. Deterministic analyzers catch known dangerous patterns; an LLM-based analyzer handles the gray areas. Compose them with `EnsembleSecurityAnalyzer`.
+- **A confirmation policy** — `ConfirmRisky()` pauses the loop when the analyzer flags something above a threshold. `AlwaysConfirm()` requires approval for every action. The canvas surfaces these pauses for you to approve or reject.
+
+Together, these turn the agent loop from "run everything blindly" into "run safe things, ask about risky things, block dangerous things." The loop itself — `Conversation.run()` — is where this all executes: build prompt → call LLM → propose action → classify risk → run or pause → ingest result → repeat.
+
+The loop also has a [stuck detector](https://docs.openhands.dev/sdk/guides/agent-stuck-detector) that watches for the agent repeating the same failed action, and [hooks](https://docs.openhands.dev/sdk/guides/hooks) where you can inject custom logic at each step.
+
+[P05](./projects/p05-safety/) has you wire up a security analyzer, a confirmation policy, and a Docker sandbox. That's where the harness goes from "learning tool" to something you'd trust with a real repo.
+
+---
+
+## 2.7 Part 5 — Architecture (where it runs)
+
+Your agent ran as a single process on your laptop, with direct access to your filesystem. That's one architecture. There are others:
+
+| Shape | What it means | When to use |
+|---|---|---|
+| **Local subprocess** | The agent server runs on your machine. Full filesystem access. | Learning, scratch work, trusted read-only exploration. What `npm run dev:dangerously-dockerless` gives you. |
+| **[Docker sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox)** | The agent server runs in a container. Isolated filesystem and network. | Real work on real repos. Kill the container and everything resets. |
+| **[Cloud workspace](https://docs.openhands.dev/sdk/guides/agent-server/cloud-workspace)** | A hosted runtime — no local Docker needed. | Managed isolation, team use, CI integration. |
+
+Switching from local to Docker is a one-line change in your Python code — swap `Workspace(...)` for `DockerWorkspace(...)`. The agent code, tools, prompts, and trace stay identical. That's the harness boundary: *where* the work runs is separate from *how* it runs.
+
+There's also a "how many agents" axis. Your task ran as a single agent. For harder tasks, you might want:
+
+- **[Sub-agent delegation](https://docs.openhands.dev/sdk/guides/agent-delegation)** — spawn a child agent for a bounded subtask.
+- **A [critic](https://docs.openhands.dev/sdk/guides/critic)** — a second LLM that reviews the first agent's work.
+
+Default to single. Multi-agent adds coordination cost that has to earn itself. [P06](./projects/p06-capstone/) is where you optionally add a critic.
+
+---
+
+## 2.8 The harness, all together
+
+Here's what you just saw, labeled:
+
+```
+┌─────────────────────────────────────────────────┐
+│                   THE HARNESS                    │
+│                                                  │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
+│  │  Model   │  │  Tools   │  │    Memory      │  │
+│  │          │  │          │  │                │  │
+│  │ Sonnet   │  │ terminal │  │ AGENTS.md      │  │
+│  │ or cheap │  │ file_ed  │  │ condensers     │  │
+│  │ or route │  │ +MCP?    │  │ workspace      │  │
+│  └──────────┘  └──────────┘  └───────────────┘  │
+│                                                  │
+│  ┌──────────────────┐  ┌──────────────────────┐  │
+│  │  Loop + Safety   │  │    Architecture      │  │
+│  │                  │  │                      │  │
+│  │ security policy  │  │ local / Docker /     │  │
+│  │ analyzers        │  │ cloud                │  │
+│  │ confirmation     │  │ single / multi-agent │  │
+│  │ stuck detector   │  │                      │  │
+│  └──────────────────┘  └──────────────────────┘  │
+│                                                  │
+└─────────────────────────────────────────────────┘
 ```
 
-When the agent emits an action, the loop pauses with `execution_status == WAITING_FOR_CONFIRMATION`. You drain `ConversationState.get_unmatched_actions(...)`, decide, and either let `conversation.run()` proceed or call `conversation.reject_pending_actions("reason here")`. The rejection string goes back into the loop as feedback, which is how the agent learns to try a different approach instead of retrying the same blocked thing.
+Every coding agent has these parts, whether or not the product lets you see them. Claude Code has a model, tools, memory, a loop, and an architecture — you just can't inspect or change most of it. OpenHands exposes all five, which is why it works for learning what a harness actually is.
 
-That's the whole stack from slide 86. The policy enum is small on purpose; the variability lives in the analyzer.
+The power of understanding the harness: when an agent fails, you stop asking "is the model bad?" and start asking "which part of the harness should I change?" Maybe the model is fine but the tools are wrong. Maybe the tools are fine but the agent had no memory of the repo. Maybe everything is fine but the agent ran too long without a stuck detector. The trace tells you which part broke.
 
-### Organizational security profiles
+---
 
-For an organization, "security policy" is not just a prompt preference. It is a harness profile that defines what the agent may do automatically, what needs review, and what should never run.
+## 2.9 What's next
 
-OpenHands exposes this as three separate layers:
+The [projects](./projects/) take each of these five parts and have you change it, measure the difference, and keep the configuration that works. By P06, you'll have a complete `harness.py` that wires together your model routing, tool selection, memory policy, security profile, and sandbox — built from the parts you just saw in action.
 
-| Layer | SDK surface | What it controls |
+| Project | What you change | What you learn |
 |---|---|---|
-| Policy language | `Agent(..., security_policy_filename="org_security_policy.j2")` | The organization's LOW / MEDIUM / HIGH guidance rendered into the agent's system prompt |
-| Risk classification | `LLMSecurityAnalyzer`, deterministic analyzers, custom analyzers, or an ensemble | The risk label assigned to each proposed action |
-| Execution control | `ConfirmRisky()`, `AlwaysConfirm()`, sandbox choice, hooks | Whether the action runs, pauses for approval, or is rejected by code |
-
-The distinction matters. A custom `security_policy_filename` guides the model's own risk assessment, but it is still model-facing text. The analyzer classifies. The confirmation policy creates operator friction. For a hard deny ("never exfiltrate secrets", "never modify files outside workspace", "never run production deploys"), use deterministic analyzers, hooks, narrow tools, and sandboxing. The security docs call this out directly: analyzers return risk; confirmation policy decides what happens; sandboxing remains a separate safety boundary.
-
-Example organizational profile:
-
-```text
-Allowed automatically:
-- read-only repository inspection
-- local test and lint commands
-- edits inside the workspace
-
-Requires confirmation:
-- package installation
-- network calls
-- git push / publish operations
-- credential or environment-variable access
-- destructive file operations
-
-Forbidden:
-- sending secrets to external services
-- modifying files outside the workspace
-- changing production infra, auth, billing, or access control
-```
-
-Wired into an agent:
-
-```python
-agent = Agent(
-    llm=llm,
-    tools=tools,
-    security_policy_filename="org_security_policy.j2",
-)
-
-conversation.set_security_analyzer(analyzer)
-conversation.set_confirmation_policy(ConfirmRisky(threshold=SecurityRisk.MEDIUM))
-```
-
-If you're teaching this tutorial inside a company, this is the point where the harness becomes policy infrastructure. You are no longer only asking "can the agent solve the task?" You are asking "can every team use the same harness without each engineer inventing their own safety rules?"
-
-### What's enforced by tool *schema*, not prompt
-
-The default file editor's `str_replace` tool requires both `old_str` and `new_str`, with the constraint that `old_str` must match exactly one location. That single schema choice prevents most "AI replaced the wrong thing" failures. It is *not* enforced by the system prompt; it's enforced by the tool input validator. Read the tool definitions before you write your own.
-
-### Canvas affordances
-
-- The agent trace is the loop. In OpenHands terms, each row is one typed event.
-- "Pause" pauses the loop between iterations (see [Pause and Resume](https://docs.openhands.dev/sdk/guides/convo-pause-and-resume)).
-- "Send while running" injects a new user message mid-loop without restarting.
-- "Fork" creates a new conversation from any point in the event history (see [Fork a Conversation](https://docs.openhands.dev/sdk/guides/convo-fork)). This is your `git reset` for agent runs — mid-run if you see things going off the rails, fork from the last good state instead of fighting forward.
-
-The fork primitive is interesting because it's what lets you run *cheap* loop ablations: same starting state, different downstream policy.
-
----
-
-## 2.5 Lever 5 — Architecture: single agent, sub-agents, and the canvas
-
-The final lever is whether you're running one agent or many. The talk's stance (slides 95–96) is to default to single — multi-agent is a coordination tax that has to earn itself.
-
-OpenHands gives you four relevant primitives:
-
-1. **One agent, many tools** — the default. Add tools, don't add agents.
-2. **[Sub-Agent Delegation](https://docs.openhands.dev/sdk/guides/agent-delegation)** — the parent spawns a child for a bounded subtask, child's events come back as a summary. Use when context is the bottleneck (e.g. a file the parent doesn't want polluting its window).
-3. **[Task Tool Set](https://docs.openhands.dev/sdk/guides/task-tool-set)** — synchronous delegation through a tool call. Cleaner mental model than free-form spawning.
-4. **Critic loops** — a separate LLM reviews the main agent's trace. The talk highlights this as the one multi-agent pattern that consistently *works* (slide 97). The SDK ships an experimental [`Critic`](https://docs.openhands.dev/sdk/guides/critic) for this.
-
-### Architecture as deployment shape
-
-There's a second "architecture" axis: where the agent server runs. Three shapes ship out of the box:
-
-| Shape | Workspace class | When to use |
-|---|---|---|
-| Local subprocess | `Workspace(host="http://127.0.0.1:18000", api_key=...)` | Tutorial loops and disposable scratch repos on a trusted laptop. What `npm run dev:dangerously-dockerless` gives you. |
-| [Docker sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox) | `DockerWorkspace(server_image=...)` | Real work, real repos, package installs, edits, tests, browser automation, or anything you don't fully trust. Isolated FS, isolated network, kill-the-container cleanup. |
-| [API sandbox](https://docs.openhands.dev/sdk/guides/agent-server/api-sandbox) / [Cloud workspace](https://docs.openhands.dev/sdk/guides/agent-server/cloud-workspace) | `APIRemoteWorkspace(...)` | Hosted runtime; no local Docker. Pays for managed isolation. |
-
-Switching from local to Docker is a single class change in the client; the agent code, tools, prompts, and agent trace stay identical. That's the harness boundary doing its job — *where* the work runs is decoupled from *how* it runs. Keep the local subprocess for learning and diagnostics; use Docker before you let the agent make meaningful changes.
-
-The canvas can flip between agent servers at runtime — you can have a "dev" server on `localhost:18000` and a "production-ish" Dockerized one on `localhost:8010`, and just switch the active connection in the UI sidebar. This is more useful than it sounds the first time you accidentally run a destructive task on the wrong server.
-
-For a deeper multi-agent follow-on, see [`rajshah4/openhands-multi-agent-demo`](https://github.com/rajshah4/openhands-multi-agent-demo). It compares shared-workspace, isolated-local, and cloud-conversation patterns so this tutorial can stay focused on the core single-harness concepts.
-
----
-
-## 2.6 What's *not* tunable (yet)
-
-Worth knowing before you go looking:
-
-- **The system prompt is mostly assembled, not user-edited.** You can replace the agent definition wholesale, but there isn't a `--system-prompt` flag. Read the assembled prompt by inspecting the first event in a conversation; if you don't like it, build a custom agent ([guide](https://docs.openhands.dev/sdk/guides/agent-custom)) instead of trying to patch it.
-- **The canvas doesn't expose every server feature.** Hooks, security analyzer config, condenser policy — these are SDK-level. You'll edit Python and restart the dev script, not click a button.
-- **MCP tool *selection* is per conversation, not per turn.** You decide on tools when the conversation starts. Mid-run swaps require forking.
-
-These are real harness decisions someone made, and you'd benefit from auditing whether they fit your task before you build on top.
-
----
-
-## 2.7 What you should be able to do now
-
-After this tour, you should be able to point at, in either the canvas or the codebase:
-
-1. The agent trace that proves what the harness actually did.
-2. The exact place a model swap or routing decision happens.
-3. Where to read the agent's active tool list for a given conversation.
-4. The compaction event (or its absence) in the agent trace.
-5. The organization security policy, analyzer, and confirmation behavior for a risky action.
-6. The line of code that decides whether the agent runs locally, in Docker, or in the cloud.
-
-If any of those is fuzzy, re-read the relevant section before moving on.
-
-The [`projects/`](./projects/) directory drops you into a six-project learning path. Each project has a `starter/` and `solution/`, changes one of the levers above, asks you to write down what you observed, and produces a config artifact you keep for the capstone. That's the part that turns a tour into engineering.
+| [P01 — Agent Trace](./projects/p01-agent-trace/) | Nothing — you read the trace | How to diagnose what the harness did |
+| [P02 — Model Routing](./projects/p02-model-routing/) | The model | Cost vs. capability tradeoffs |
+| [P03 — Retrieval](./projects/p03-retrieval/) | The tools | When semantic search earns its slot |
+| [P04 — Memory](./projects/p04-memory/) | `AGENTS.md` and condensers | How prior knowledge changes behavior |
+| [P05 — Safety](./projects/p05-safety/) | Security policy + Docker | Bounding what the agent can do |
+| [P06 — Capstone](./projects/p06-capstone/) | Everything, wired together | A production-shaped harness |
