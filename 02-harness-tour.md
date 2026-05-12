@@ -85,7 +85,11 @@ Nothing. It had your prompt, the system prompt the harness assembled, and the to
 
 That's expensive. If this were a repo you work in every day, you'd want the agent to start with some context: "this is a monorepo, the frontend is in `apps/canvas`, the backend is in `apps/server`, config lives in `.env` files." That's what **`AGENTS.md`** does. It's a small file at the repo root that the harness reads at conversation start and injects into the system prompt.
 
-Memory in a harness has three layers. **Active context** is the system prompt plus recent events the model can see right now, managed by [condensers](https://docs.openhands.dev/sdk/arch/condenser) that summarize or drop older events when context gets too long. You can see compaction events in the trace. **Working state** is files the agent creates during a run: plans, notes, partial outputs that live in the workspace filesystem. The agent reads them back with `file_editor` or `terminal`. **Durable memory** is knowledge that persists across conversations, primarily [`AGENTS.md`](https://docs.openhands.dev) at the repo root plus [skills](https://docs.openhands.dev/sdk/guides/skill) loaded on demand.
+Memory in a harness has three layers:
+
+- **Active context.** The system prompt plus recent events the model can see right now. Managed by [condensers](https://docs.openhands.dev/sdk/arch/condenser) that summarize or drop older events when context gets too long. You can see compaction events in the trace.
+- **Working state.** Files the agent creates during a run: plans, notes, partial outputs in the workspace filesystem. The agent reads them back with `file_editor` or `terminal`.
+- **Durable memory.** Knowledge that persists across conversations, primarily [`AGENTS.md`](https://docs.openhands.dev) at the repo root plus [skills](https://docs.openhands.dev/sdk/guides/skill) loaded on demand.
 
 Check your trace: did a compaction event fire? On a short task, probably not. On a longer one, you'd see older events replaced by a summary.
 
@@ -99,7 +103,11 @@ The agent ran shell commands on your machine. It could have run `rm -rf`. It cou
 
 That's fine for a tutorial on a scratch repo. Not fine for real work. The harness needs to answer three questions: what is the agent allowed to do automatically, what needs your approval, and what should never run?
 
-OpenHands gives you three layers. A **security policy** is a template file (`org_security_policy.j2`) that tells the model what's LOW, MEDIUM, and HIGH risk. It guides the model's own judgment but doesn't enforce anything by itself. **Security analyzers** are code that classifies each proposed action. Deterministic analyzers catch known dangerous patterns; an LLM-based analyzer handles the gray areas. Compose them with `EnsembleSecurityAnalyzer`. A **confirmation policy** like `ConfirmRisky()` pauses the loop when the analyzer flags something above a threshold. `AlwaysConfirm()` requires approval for every action. The canvas surfaces these pauses for you to approve or reject.
+OpenHands gives you three layers:
+
+- **Security policy.** A template file (`org_security_policy.j2`) that tells the model what's LOW, MEDIUM, and HIGH risk. It guides the model's own judgment but doesn't enforce anything by itself.
+- **Security analyzers.** Code that classifies each proposed action. Deterministic analyzers catch known dangerous patterns; an LLM-based analyzer handles the gray areas. Compose them with `EnsembleSecurityAnalyzer`.
+- **Confirmation policy.** `ConfirmRisky()` pauses the loop when the analyzer flags something above a threshold. `AlwaysConfirm()` requires approval for every action. The canvas surfaces these pauses for you to approve or reject.
 
 Together these turn the agent loop from "run everything blindly" into "run safe things, ask about risky things, block dangerous things." The loop itself, `Conversation.run()`, is where this all executes: build prompt, call LLM, propose action, classify risk, run or pause, ingest result, repeat. It also has a [stuck detector](https://docs.openhands.dev/sdk/guides/agent-stuck-detector) that watches for the agent repeating the same failed action, and [hooks](https://docs.openhands.dev/sdk/guides/hooks) where you can inject custom logic at each step.
 
@@ -109,7 +117,11 @@ Together these turn the agent loop from "run everything blindly" into "run safe 
 
 ## 2.7 Part 5: Architecture (where it runs)
 
-Your agent ran as a single process on your laptop, with direct access to your filesystem. That's one architecture. OpenHands ships three: a **local subprocess** (what `npm run dev:dangerously-dockerless` gives you, full filesystem access, fine for learning), a **[Docker sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox)** (isolated filesystem and network, kill the container and everything resets), and a **[cloud workspace](https://docs.openhands.dev/sdk/guides/agent-server/cloud-workspace)** (hosted runtime, no local Docker needed).
+Your agent ran as a single process on your laptop, with direct access to your filesystem. That's one architecture. OpenHands ships three: 
+
+- A **local subprocess** (what `npm run dev:dangerously-dockerless` gives you, full filesystem access, fine for learning)
+- A **[Docker sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox)** (isolated filesystem and network, kill the container and everything resets)
+- A **[cloud workspace](https://docs.openhands.dev/sdk/guides/agent-server/cloud-workspace)** (hosted runtime, no local Docker needed).
 
 Switching from local to Docker is a one-line change in your Python code: swap `Workspace(...)` for `DockerWorkspace(...)`. The agent code, tools, prompts, and trace stay identical. Where the work runs is separate from how it runs.
 
