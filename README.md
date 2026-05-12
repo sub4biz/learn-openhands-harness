@@ -92,3 +92,13 @@ None of this is required. The tutorial is self-contained.
 - [Agent Server: Local](https://docs.openhands.dev/sdk/guides/agent-server/local-server) and [Docker Sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox) guides.
 - [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas). The UI. The `DEVELOPMENT.md` is unusually honest about which knobs you actually have.
 - [`OpenHands/software-agent-sdk`](https://github.com/OpenHands/software-agent-sdk). The SDK the server is built on.
+
+---
+
+## Where to go from here
+
+After P06 you have a working `harness.py` and the mental model to extend it. A few directions worth exploring:
+
+- **More use cases.** The [OpenHands use cases overview](https://docs.openhands.dev/openhands/usage/use-cases/overview) shows what people are building with coding harnesses beyond the tutorial tasks: migrations, test generation, documentation, issue triage. Good source of fresh prompts to stress-test your harness against.
+- **Multi-agent orchestration.** This tutorial builds a single-agent harness. The [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo) shows the next step: composing multiple harnesses (Claude Code, Gemini CLI, OpenHands) into an implement → test → review pipeline. Three orchestration patterns, same workflow, different isolation and state-sharing tradeoffs.
+- **Your own harness decisions.** The whole point of this tutorial is that you can now look at any agent product and ask concrete questions. Which model is it using? What tools does it expose? What does it remember? What can it break? Where does the loop stop? If you can answer those for your own `harness.py`, you can answer them for anything.
