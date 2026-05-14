@@ -6,7 +6,7 @@ This tutorial gives you a working harness you can open, run, and change. You'll 
 
 By the end you'll have a `harness.py` you built yourself, with model routing, retrieval config, memory policy, a security profile, and a critic. More importantly, you'll be able to look at any agent product and answer: *what would I change about its harness if I owned the source?*
 
-> **Background.** If you want the conceptual frame first, read the [harness-engineering README](https://github.com/rajshah4/harness-engineering) and watch the [talk](https://www.youtube.com/watch?v=KijChx7q2nY). This tutorial assumes you already buy the thesis: the model reasons, the harness does everything else.
+> **Background.** If you want the conceptual frame first, read the [harness-engineering README](https://github.com/rajshah4/harness-engineering) and watch the [talk](https://www.youtube.com/watch?v=KijChx7q2nY). This tutorial assumes you understand the role and importance of the harness.
 
 ---
 
