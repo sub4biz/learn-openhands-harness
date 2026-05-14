@@ -20,7 +20,7 @@ OpenHands is a useful learning framing for three reasons:
 2. **Three deployment shapes from one codebase.** Local process, Docker sandbox, hosted API, all by swapping a `Workspace` class. That makes the cost of *where work runs* visible.
 3. **The trace is a first-class object.** The chronological record of messages, tool calls, results, compaction, and confirmations is right there in the canvas. You don't have to grep logs to see what the harness is doing.
 
-The Anthropic [post-mortem on Claude Code's reasoning-effort regression](https://www.anthropic.com/engineering/claude-code-default-reasoning-effort-update) is a good reminder of what closed harnesses cost you. When the model didn't change but quality did, users had no way to diagnose it. The whole point of running an open harness is that you *can*.
+The Anthropic [post-mortem on Claude Code's reasoning-effort regression](https://www.anthropic.com/engineering/april-23-postmortem) is a good reminder of what closed harnesses cost you. When the model didn't change but quality did, users had no way to diagnose it. The whole point of running an open harness is that you *can*.
 
 ---
 
