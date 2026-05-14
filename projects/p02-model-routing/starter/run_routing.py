@@ -13,9 +13,18 @@ import sys
 import time
 from pathlib import Path
 
+PROJECTS_DIR = Path(__file__).resolve().parents[2]
+if str(PROJECTS_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECTS_DIR))
+
 from pydantic import SecretStr
 from openhands.sdk import LLM, Conversation, RemoteConversation, Workspace
 from openhands.tools.preset.default import get_default_agent
+from _runtime import (
+    resolve_api_key,
+    resolve_server_working_dir as resolve_working_dir,
+    token_counts,
+)
 
 PROMPT = (
     "Find every place VITE_BACKEND_HOST is read or set, "
@@ -23,6 +32,16 @@ PROMPT = (
 )
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
+DEFAULT_SMALL_MODEL = "anthropic/claude-haiku-4-5-20251001"
+FLAGSHIP_MARKERS = (
+    "image",
+    "screenshot",
+    "diagram",
+    "large refactor",
+    "security",
+    "architecture",
+    "multi-file edit",
+)
 
 
 def require_env(name: str) -> str:
@@ -31,22 +50,6 @@ def require_env(name: str) -> str:
         print(f"Missing required environment variable: {name}", file=sys.stderr)
         raise SystemExit(2)
     return value
-
-
-def resolve_api_key() -> str | None:
-    key = os.environ.get("AGENT_SERVER_API_KEY")
-    if key:
-        return key
-    path = Path.home() / ".openhands" / "agent-canvas" / "session-api-key.txt"
-    return path.read_text().strip() if path.exists() else None
-
-
-def resolve_working_dir() -> str:
-    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
-    if not path.exists():
-        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
-        raise SystemExit(2)
-    return str(path)
 
 
 def run_config(label: str, llm: LLM, server: str, working_dir: str) -> dict:
@@ -67,21 +70,31 @@ def run_config(label: str, llm: LLM, server: str, working_dir: str) -> dict:
         wall = time.time() - t0
 
         metrics = conversation.conversation_stats.get_combined_metrics()
+        prompt_tokens, completion_tokens = token_counts(metrics)
         return {
             "label": label,
             "events": len(conversation.state.events),
             "wall": wall,
             "cost": metrics.accumulated_cost,
-            "tokens_in": metrics.accumulated_prompt_tokens,
-            "tokens_out": metrics.accumulated_completion_tokens,
+            "tokens_in": prompt_tokens,
+            "tokens_out": completion_tokens,
         }
     finally:
         conversation.close()
 
 
+def choose_llm_for_prompt(prompt: str, flagship_llm: LLM, small_llm: LLM) -> tuple[str, LLM]:
+    """TODO: tune this policy for your task family."""
+    lowered = prompt.lower()
+    if any(marker in lowered for marker in FLAGSHIP_MARKERS):
+        return "flagship", flagship_llm
+    return "small", small_llm
+
+
 def main() -> None:
     api_key = require_env("LLM_API_KEY")
     model_flagship = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
+    model_small = os.environ.get("LLM_MODEL_SMALL", DEFAULT_SMALL_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
     working_dir = resolve_working_dir()
 
@@ -92,28 +105,29 @@ def main() -> None:
         api_key=SecretStr(api_key),
     )
 
-    # TODO: Config B — create a small_llm using LLM_MODEL_SMALL env var
-    # small_llm = LLM(...)
-
-    # TODO: Config C — create a RouterLLM that mixes flagship and small.
-    # Start with MultimodalRouter or write a keyword-based router.
-    # from openhands.sdk.llm.router import MultimodalRouter
-    # router_llm = MultimodalRouter(
-    #     usage_id="agent-router",
-    #     llms_for_routing={"primary": flagship_llm, "secondary": small_llm},
+    # TODO: Config B — create a small_llm using LLM_MODEL_SMALL env var.
+    # small_llm = LLM(
+    #     usage_id="agent-small",
+    #     model=model_small,
+    #     api_key=SecretStr(api_key),
     # )
+
+    # TODO: Config C — choose one concrete LLM before creating the remote agent.
+    # RouterLLM instances do not currently survive RemoteConversation
+    # serialization in SDK 1.22.x; pre-conversation routing does.
+    # route, routed_llm = choose_llm_for_prompt(PROMPT, flagship_llm, small_llm)
 
     results = []
 
     print("\n--- Config A: flagship ---")
     results.append(run_config("flagship", flagship_llm, server, working_dir))
 
-    # TODO: uncomment once you've created small_llm and router_llm
+    # TODO: uncomment once you've created small_llm and routed_llm.
     # print("\n--- Config B: small ---")
     # results.append(run_config("small", small_llm, server, working_dir))
     #
-    # print("\n--- Config C: routed ---")
-    # results.append(run_config("routed", router_llm, server, working_dir))
+    # print(f"\n--- Config C: routed -> {route} ---")
+    # results.append(run_config(f"routed->{route}", routed_llm, server, working_dir))
 
     print("\n" + "=" * 70)
     print(f"{'Config':<12} {'Events':>7} {'Wall':>8} {'Cost':>10} {'Tokens in':>12} {'Tokens out':>12}")

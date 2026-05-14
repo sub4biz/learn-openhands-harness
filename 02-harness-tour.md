@@ -49,7 +49,7 @@ Somewhere in that trace, an LLM read the context and decided what to do next. Wh
 
 If you used the canvas defaults, it's whatever you configured in the model picker. If you ran `quickstart.py`, it's the `LLM_MODEL` you exported (or the Sonnet 4.5 default). Either way, one model did all the work: reasoning, tool selection, writing the answer.
 
-That's fine for a first run, but it's also the most expensive configuration. In a real harness you might route cheap calls to a small model, hard calls to a flagship, and vision calls to a multimodal one. OpenHands supports all three through `LLM`, [`LLMRegistry`](https://docs.openhands.dev/sdk/guides/llm-registry), and [`RouterLLM`](https://docs.openhands.dev/sdk/guides/llm-routing). [P02](./projects/p02-model-routing/) has you wire up a router and compare the cost.
+That's fine for a first run, but it's also the most expensive configuration. In a real harness you might route cheap tasks to a small model, hard tasks to a flagship, and vision tasks to a multimodal one. OpenHands supports model configuration through `LLM` and [`LLMRegistry`](https://docs.openhands.dev/sdk/guides/llm-registry), and local/in-process harnesses can also use [`RouterLLM`](https://docs.openhands.dev/sdk/guides/llm-routing). [P02](./projects/p02-model-routing/) uses a remote-safe routing policy before agent construction, then compares the cost.
 
 The model is one part of the harness. Swap it and the cost and capability change, but the rest of the harness stays the same. That's why you can tune each part independently.
 
@@ -59,7 +59,7 @@ The model is one part of the harness. Swap it and the cost and capability change
 
 Look at the tool calls in your trace. The agent probably used `terminal` to run `grep` or `find`, `file_editor` to read specific files, and maybe `task_tracker` to write down what it found so far. No vector database, no embeddings, no RAG pipeline. It found code by grepping for it, the same way you would. For exact symbol names like `VITE_BACKEND_HOST`, grep is fast and reliable.
 
-Now imagine the prompt had been vaguer: "How does the canvas pick which backend to talk to?" Same question, different words. Grep for `VITE_BACKEND_HOST` won't work if you don't know that name yet. That's the vocabulary-mismatch problem, and it's when semantic search (via [MCP](https://docs.openhands.dev/sdk/guides/mcp)) earns its place in the tool list.
+Now imagine the prompt had been vaguer: "How does the canvas pick which backend to talk to?" Same question, different words. A strong model may still recover by grepping adjacent words like `backend` and `proxy`; sometimes it will not. That's the vocabulary-mismatch problem, and it is where semantic search (via [MCP](https://docs.openhands.dev/sdk/guides/mcp)) can earn its place in the tool list.
 
 The tools the agent can use are set when the conversation starts. You choose them:
 
@@ -73,7 +73,7 @@ agent = Agent(
 )
 ```
 
-Add a tool and the agent can reach for it. Remove one and it can't. [P03](./projects/p03-retrieval/) has you compare lexical-only against lexical + semantic on the same prompt.
+Add a tool and the agent can reach for it. Remove one and it can't. [P03](./projects/p03-retrieval/) includes a tiny `search_code` MCP server so you can compare lexical-only against lexical + semantic and decide whether the extra tool actually helps.
 
 ---
 

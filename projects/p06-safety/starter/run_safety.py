@@ -16,9 +16,18 @@ import sys
 import time
 from pathlib import Path
 
+PROJECTS_DIR = Path(__file__).resolve().parents[2]
+if str(PROJECTS_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECTS_DIR))
+
 from pydantic import SecretStr
 from openhands.sdk import LLM, Conversation, RemoteConversation, Workspace
 from openhands.tools.preset.default import get_default_agent
+from _runtime import (
+    resolve_api_key,
+    resolve_host_working_dir,
+    resolve_server_working_dir,
+)
 
 # Try different prompts to test risk levels:
 PROMPTS = {
@@ -39,28 +48,12 @@ def require_env(name: str) -> str:
     return value
 
 
-def resolve_api_key() -> str | None:
-    key = os.environ.get("AGENT_SERVER_API_KEY")
-    if key:
-        return key
-    path = Path.home() / ".openhands" / "agent-canvas" / "session-api-key.txt"
-    return path.read_text().strip() if path.exists() else None
-
-
-def resolve_working_dir() -> str:
-    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
-    if not path.exists():
-        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
-        raise SystemExit(2)
-    return str(path)
-
-
 def main() -> None:
     api_key = require_env("LLM_API_KEY")
     model = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
     use_docker = "--docker" in sys.argv
-    working_dir = resolve_working_dir()
+    working_dir = resolve_host_working_dir() if use_docker else resolve_server_working_dir()
 
     llm = LLM(usage_id="agent", model=model, api_key=SecretStr(api_key))
 
@@ -71,11 +64,13 @@ def main() -> None:
 
     if use_docker:
         # TODO: switch to DockerWorkspace
+        # Before constructing DockerWorkspace, run `docker info` and print a
+        # clear error if Docker is missing or stopped.
         # from openhands.workspace import DockerWorkspace
         # workspace = DockerWorkspace(
         #     server_image="ghcr.io/openhands/agent-server:latest-python",
         #     host_port=8010,
-        #     mount_dir=working_dir,
+        #     mount_dir=str(working_dir),
         # )
         print("Docker mode not yet implemented — fill in the TODO!", file=sys.stderr)
         raise SystemExit(1)
@@ -110,6 +105,10 @@ def main() -> None:
     # )
     # conversation.set_security_analyzer(analyzer)
     # conversation.set_confirmation_policy(ConfirmRisky(threshold=SecurityRisk.MEDIUM))
+    #
+    # TODO: once ConfirmRisky is enabled, use a non-blocking run loop for terminal
+    # scripts. If the remote conversation reaches waiting_for_confirmation,
+    # print the pending action and ask the learner to approve or reject it.
 
     try:
         t0 = time.time()

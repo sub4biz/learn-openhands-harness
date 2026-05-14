@@ -3,7 +3,9 @@
 ## Observations from P05 runs
 
 ### AGENTS.md effect
-- With a minimal hand-written AGENTS.md (5-10 lines), the agent skipped N re-discovery turns.
+- With a minimal hand-written AGENTS.md (5-10 lines), `compare_traces.py`
+  reported [?] fewer total events, [?] fewer likely re-discovery events, and
+  [?] fewer input tokens.
 - Auto-generated AGENTS.md (if tested) was [better/worse/same] — consistent with the ETH Zurich finding that human-written context outperforms auto-generated.
 
 ### Compaction

@@ -9,12 +9,18 @@ Run with:
 Required env vars:  LLM_API_KEY
 Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
                     LLM_MODEL_FLAGSHIP, LLM_MODEL_SMALL, WORKSPACE_DIR
+                    HARNESS_ENABLE_CRITIC, CRITIC_SERVER_URL,
+                    CRITIC_API_KEY, CRITIC_MODEL_NAME
 """
 
 import os
 import sys
 import time
 from pathlib import Path
+
+PROJECTS_DIR = Path(__file__).resolve().parents[2]
+if str(PROJECTS_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECTS_DIR))
 
 from pydantic import SecretStr
 
@@ -32,8 +38,10 @@ from openhands.tools.terminal import TerminalTool
 from openhands.tools.file_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
 from openhands.workspace import DockerWorkspace
+from _runtime import resolve_host_working_dir
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
+DEFAULT_SMALL_MODEL = "anthropic/claude-haiku-4-5-20251001"
 
 
 def require_env(name: str) -> str:
@@ -48,17 +56,10 @@ def model_env(primary: str, fallback: str, default: str = DEFAULT_MODEL) -> str:
     return os.environ.get(primary) or os.environ.get(fallback, default)
 
 
-def resolve_working_dir() -> str:
-    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
-    if not path.exists():
-        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
-        raise SystemExit(2)
-    return str(path)
-
-
 # --- P02: model + routing ---------------------------------------------------
-# TODO: paste your RouterLLM or LLMRegistry config here.
-# You need at least: flagship_llm, small_llm, and agent_llm (the router).
+# TODO: paste your P02 routing policy or LLMRegistry config here.
+# Keep routing outside the RemoteConversation boundary: choose one concrete LLM
+# for the task, then build the agent with that LLM.
 
 api_key = SecretStr(require_env("LLM_API_KEY"))
 
@@ -68,8 +69,18 @@ flagship_llm = LLM(
     api_key=api_key,
 )
 
-# TODO: small_llm = LLM(...)
-# TODO: agent_llm = MultimodalRouter(...) or your custom RouterLLM
+# TODO: small_llm = LLM(
+#     usage_id="agent-small",
+#     model=os.environ.get("LLM_MODEL_SMALL", DEFAULT_SMALL_MODEL),
+#     api_key=api_key,
+# )
+
+
+def choose_llm_for_task(task: str) -> LLM:
+    """TODO: replace this with the routing policy you kept from P02."""
+    _ = task
+    return flagship_llm
+
 
 # --- supporting note: tool surface ------------------------------------------
 tools = [
@@ -88,8 +99,22 @@ tools = [
 # scoped prompts plus an aggregation step.
 
 # --- P07a: critic + iterative refinement ------------------------------------
-# TODO: paste your Critic + IterativeRefinementConfig block here, or remove
-# this section if the critic didn't earn its slot for your task type.
+# TODO: paste your P07a critic result here. Keep this disabled unless the
+# repeated-run table showed a real pass-rate or cost-per-pass improvement.
+#
+# Working shape:
+# from openhands.sdk.critic import APIBasedCritic, IterativeRefinementConfig
+# iterative = IterativeRefinementConfig(
+#     success_threshold=float(os.environ.get("CRITIC_SUCCESS_THRESHOLD", "0.7")),
+#     max_iterations=int(os.environ.get("CRITIC_MAX_ITERATIONS", "3")),
+# )
+# critic = APIBasedCritic(
+#     server_url=os.environ["CRITIC_SERVER_URL"],
+#     api_key=os.environ.get("CRITIC_API_KEY", api_key.get_secret_value()),
+#     model_name=os.environ.get("CRITIC_MODEL_NAME", "critic"),
+#     iterative_refinement=iterative,
+# )
+critic = None
 
 # --- P06: security profile --------------------------------------------------
 # TODO: point this at your kept org_security_policy.j2
@@ -111,22 +136,22 @@ security_analyzer = EnsembleSecurityAnalyzer(
     ],
 )
 
-# --- agent -------------------------------------------------------------------
-# TODO: replace flagship_llm with agent_llm (your router) once it's wired up.
-# TODO: add critic=critic if you kept one from P07a.
-agent = Agent(
-    llm=flagship_llm,
-    tools=tools,
-    security_policy_filename=security_policy_filename,
-)
-
-
 # --- P06: sandbox -----------------------------------------------------------
 def main(task: str) -> None:
+    # TODO: add critic=critic if you kept one from P07a.
+    agent = Agent(
+        llm=choose_llm_for_task(task),
+        tools=tools,
+        security_policy_filename=security_policy_filename,
+        critic=critic,
+    )
+
     with DockerWorkspace(
         server_image="ghcr.io/openhands/agent-server:latest-python",
-        host_port=int(os.environ.get("HARNESS_PORT", "8010")),
-        mount_dir=resolve_working_dir(),
+        # P06 uses 8010 in its examples. P07 defaults to 8020 so the two
+        # lessons do not collide if both are running.
+        host_port=int(os.environ.get("HARNESS_PORT", "8020")),
+        mount_dir=str(resolve_host_working_dir()),
     ) as workspace:
         # P05: AGENTS.md is read automatically if it sits at the root of the
         # working directory mounted into the workspace. Make sure your kept

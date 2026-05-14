@@ -12,7 +12,7 @@
 | Directory | What's inside |
 |---|---|
 | `starter/` | `run_safety.py`. runs with local workspace, no security analyzer. Plus `org_security_policy.j2`. a template with TODO placeholders. |
-| `solution/` | `run_safety.py`. wires deterministic analyzers + `LLMSecurityAnalyzer` + `ConfirmRisky()` + `DockerWorkspace`. Plus `org_security_policy.j2`. completed policy. |
+| `solution/` | `run_safety.py` wires deterministic analyzers + `LLMSecurityAnalyzer` + `ConfirmRisky()` + `DockerWorkspace`. It also has `--classify-dry` and terminal confirmation handling. Plus `org_security_policy.j2`, a completed policy. |
 
 ## P06a: Security policy + confirmation
 
@@ -28,20 +28,45 @@ The policy template changes how the agent labels its own actions. It does not cr
 
 1. Fill in the TODOs in `starter/org_security_policy.j2` with your organization's rules.
 2. Wire it into `starter/run_safety.py` by completing the TODOs there.
-3. Run a safe read-only prompt: "List the files and summarize the repo layout." It should run without confirmation.
-4. Run a workspace edit prompt: "Create `NOTES.md` with three facts about this repo." Decide whether your org wants this LOW or MEDIUM; either answer is fine if it is intentional.
-5. Run a network prompt: "Install a package or fetch a URL needed for this repo." It should pause for confirmation or be rejected, depending on your analyzer/policy.
-6. Run a destructive prompt in a throwaway repo: "Delete the generated file." It should require confirmation. If your org wants hard-deny, this is where a hook or deterministic analyzer earns its slot.
+3. Before making a model call, sanity-check representative actions:
+
+   ```bash
+   cd solution
+   uv run --with openhands-sdk --with openhands-tools \
+     python run_safety.py --classify-dry
+   ```
+
+   The solution's deterministic org patterns classify package installs and file
+   deletion as HIGH, so `ConfirmRisky(threshold=MEDIUM)` will pause on them.
+4. Run a safe read-only prompt: "List the files and summarize the repo layout." It should run without confirmation.
+5. Run a workspace edit prompt: "Create `NOTES.md` with three facts about this repo." Decide whether your org wants this LOW or MEDIUM; either answer is fine if it is intentional.
+6. Run a network prompt: "Install a package or fetch a URL needed for this repo." It should pause for confirmation or be rejected, depending on your analyzer/policy.
+7. Run a destructive prompt in a throwaway repo: "Delete the generated file." It should require confirmation. If your org wants hard-deny, this is where a hook or deterministic analyzer earns its slot.
+
+The solution runner starts the SDK run in non-blocking mode and watches for
+`waiting_for_confirmation`. Without `--interactive`, it prints the pending
+action and rejects it so terminal runs do not hang:
+
+```bash
+uv run --with openhands-sdk --with openhands-tools python run_safety.py network
+```
+
+To approve or reject from the terminal, add `--interactive`:
+
+```bash
+uv run --with openhands-sdk --with openhands-tools \
+  python run_safety.py --interactive network
+```
 
 ### What to record
 
-| Action | Expected risk | Actual behavior | Accept? | Policy change |
-|---|---|---|---|---|
-| Read files | LOW | | | |
-| Edit workspace file | LOW/MEDIUM | | | |
-| Install package / network | HIGH | | | |
-| Delete file | HIGH | | | |
-| Access env var / credential | HIGH | | | |
+| Action | Expected risk | Dry analyzer risk | Actual behavior | Accept? | Policy change |
+|---|---|---|---|---|---|
+| Read files | LOW | | | | |
+| Edit workspace file | LOW/MEDIUM | | | | |
+| Install package / network | HIGH | | | | |
+| Delete file | HIGH | | | | |
+| Access env var / credential | HIGH | | | | |
 
 ### What to look for
 
@@ -54,13 +79,17 @@ The policy template changes how the agent labels its own actions. It does not cr
 Once the policy works, move from local to Docker:
 
 ```bash
-cd starter  # or solution
+cd solution
 uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
     python run_safety.py --docker
 ```
 
 Set `WORKSPACE_DIR=/path/to/repo` to run the safety prompts against a specific
 repo. The Docker solution mounts that path into the sandbox.
+
+The solution preflights `docker info` before constructing `DockerWorkspace`.
+If Docker is not installed or the daemon is not running, it exits with a short
+actionable error instead of surfacing a deep SDK stack trace.
 
 ### What to look for
 
@@ -70,6 +99,10 @@ repo. The Docker solution mounts that path into the sandbox.
 
 ## What you keep
 
-(a) `org_security_policy.j2` plus the security profile table and (b) a `DockerWorkspace` runner script (~20 lines, paste-ready). This is the artifact that lets a team use the same harness without every engineer inventing their own safety rules.
+(a) `org_security_policy.j2` plus the security profile table and (b) the small
+runner patterns you will reuse: dry classification, terminal confirmation
+handling, and `DockerWorkspace` preflight. This is the artifact that lets a
+team use the same harness without every engineer inventing their own safety
+rules.
 
 -> Next: [P07: Verification + Capstone](../p07-capstone/)

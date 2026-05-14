@@ -52,6 +52,17 @@ npm install
 npm run dev:dangerously-dockerless
 ```
 
+Do not substitute `npm run dev` unless you know which mode your checkout uses.
+Recent Agent Canvas builds may start a Dockerized agent server from `npm run dev`
+or `npm run dev:docker`. In that mode, the server usually sees your project
+root at `/projects`, not at your host path such as `/Users/you/Code`. The SDK
+scripts in this repo can map host paths for you when these are set:
+
+```bash
+export AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects
+export AGENT_WORKSPACE_SERVER_ROOT=/projects
+```
+
 What this actually does, from `DEVELOPMENT.md`:
 
 - Spawns an agent-server subprocess via `uvx` on `127.0.0.1:18000`.
@@ -147,6 +158,7 @@ agent = get_default_agent(llm=llm, cli_mode=True)
 workspace = Workspace(
     host="http://127.0.0.1:18000",
     api_key=agent_server_api_key,
+    # Use a host path in dockerless mode; use /projects/... when the server is Dockerized.
     working_dir=os.getenv("WORKSPACE_DIR", os.getcwd()),
 )
 conversation = Conversation(agent=agent, workspace=workspace)
@@ -169,6 +181,21 @@ uv run --with openhands-sdk --with openhands-tools python scripts/quickstart.py
 Set `WORKSPACE_DIR=/path/to/repo` if you want the SDK run to inspect a repo other
 than the current directory. In dockerless mode, make that repo disposable or
 easy to restore. For real work, switch to Docker first.
+
+If your agent server is Dockerized and the repo lives at
+`/path/to/your/projects/agent-canvas` on the host, either set:
+
+```bash
+export AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects
+export AGENT_WORKSPACE_SERVER_ROOT=/projects
+export WORKSPACE_DIR=/path/to/your/projects/agent-canvas
+```
+
+or pass the server-visible path directly:
+
+```bash
+export WORKSPACE_DIR=/projects/agent-canvas
+```
 
 If this exits with `Missing required environment variable: LLM_API_KEY`, the server is fine; the SDK client just doesn't have model credentials in your shell. Source `.env`, export `LLM_API_KEY`, or use the canvas LLM settings path from §1.4.
 
@@ -193,6 +220,7 @@ If any of the above is false, fix it now. Common failures and fixes:
 | `node: command not found` | Wrong Node version | `nvm install 22.12 && nvm use 22.12` |
 | `uvx: command not found` | `uv` not on `PATH` | Re-source your shell, or `~/.local/bin/uvx --version` |
 | Server exits immediately, no health endpoint | `uvx` install/start failure or a busy port | Re-read the launcher error; rerun after freeing the port or fixing `uvx` |
+| `500 Internal Server Error` when creating a conversation, with a host path like `/Users/...` or `/private/var/...` in the stack trace | Dockerized agent server cannot see the host path passed as `working_dir` | Set `AGENT_WORKSPACE_HOST_ROOT` + `AGENT_WORKSPACE_SERVER_ROOT`, or set `WORKSPACE_DIR` to the server path such as `/projects/agent-canvas` |
 | `500 Internal Server Error` with `tmux` / `File name too long` | macOS temp path made the tmux socket path too long | Restart the server with a short tmux temp dir: `mkdir -p /private/tmp/oh-tmux && TMUX_TMPDIR=/private/tmp/oh-tmux npm run dev:dangerously-dockerless` |
 | `401 Unauthorized` from `/api/*` | Dev server generated a session API key | Send `X-Session-API-Key: $(cat ~/.openhands/agent-canvas/session-api-key.txt)` or pin `SESSION_API_KEY` / `VITE_SESSION_API_KEY` before restart |
 | Canvas blank, console errors about CORS | Frontend pointing at wrong backend | In the full dockerless stack, `VITE_BACKEND_HOST` should point at the ingress port (`127.0.0.1:8000` by default). In frontend-only mode, point it at your existing backend. |

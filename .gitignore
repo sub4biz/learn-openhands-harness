@@ -16,6 +16,7 @@ venv/
 # Editor
 .vscode/
 .idea/
+.claude/
 *.swp
 
 # Agent workspace artifacts
@@ -27,3 +28,7 @@ results.md
 !projects/**/harness.py
 !projects/**/org_security_policy.j2
 FACTS.txt
+
+# Local grading scratch
+grading.md
+grading/

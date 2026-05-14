@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **What You Do** | Run the prompt with `terminal + file_editor` only, then with an MCP semantic-search server attached. Measure when semantic earns its slot vs when it just adds turns. |
-| **Harness Mechanism** | Lexical baseline (`grep` / file reads / `find`) vs. lexical + [MCP](https://docs.openhands.dev/sdk/guides/mcp) semantic |
+| **What You Do** | Run the prompt with `terminal + file_editor` only, then with an MCP code-search server attached. Measure when the extra retrieval tool earns its slot vs when it just adds turns. |
+| **Harness Mechanism** | Lexical baseline (`grep` / file reads / `find`) vs. lexical + [MCP](https://docs.openhands.dev/sdk/guides/mcp) `search_code` |
 
 **Phase: STOP HALLUCINATED PATHS.** Coding agents default to `grep`. The talk's stance (slides 25–31): semantic only earns its slot when you have a vocabulary mismatch.
 
@@ -11,27 +11,57 @@
 
 | Directory | What's inside |
 |---|---|
-| `starter/` | `run_retrieval.py`. runs with the default lexical tool set. TODO for adding an MCP semantic-search server. |
-| `solution/` | `run_retrieval.py`. runs both configs (lexical-only and lexical+MCP) and compares tool-call counts. Plus `mcp_decision_rule.md`. the one-line decision rule to keep. |
+| `code_search_mcp.py` | Minimal dependency-free stdio MCP server with one `search_code` tool. It indexes the target repo and returns ranked snippets. |
+| `starter/` | `run_retrieval.py`. Runs the default lexical tool set and includes the helper that builds the MCP config. |
+| `solution/` | `run_retrieval.py`. Runs lexical-only and lexical+MCP configs and compares event/cost/MCP-call counts. Plus `mcp_decision_rule.md`, the one-line decision rule to keep. |
 
 ## Setup
 
 - Same model (from P02), same baseline tool list. Hold them constant.
 - Two configurations:
   - **A: lexical only:** `terminal` + `file_editor`.
-  - **B: lexical + semantic:** add an MCP server through `Agent(..., mcp_config={"mcpServers": ...})` that exposes a `search_code` tool against the same repo. A small, real one is [`OpenHands/extensions`](https://github.com/OpenHands/extensions), or build or build a stub that wraps `bm25s` over the repo files.
+  - **B: lexical + MCP search:** attach the included stdio MCP server through `Agent(..., mcp_config={"mcpServers": ...})`. It exposes `search_code` against the same repo.
+
+If you use Dockerized Agent Canvas, the MCP command runs inside the agent-server container. Keep both this tutorial repo and the target repo under the mounted project root, for example:
+
+```bash
+export PROJECT_PATH=/Users/you/Code
+export WORKSPACE_DIR=/projects/agent-canvas
+```
+
+The project scripts map this tutorial's `code_search_mcp.py` to `/projects/learn-openhands-harness/projects/p03-retrieval/code_search_mcp.py` before sending the config to the server.
+
+Before spending model budget, smoke-test the MCP server:
+
+```bash
+uv run --with openhands-sdk --with openhands-tools \
+  python projects/p03-retrieval/solution/run_retrieval.py --mcp-smoke
+```
+
+To verify the remote agent server can launch the MCP subprocess, run one short live check:
+
+```bash
+uv run --with openhands-sdk --with openhands-tools \
+  python projects/p03-retrieval/solution/run_retrieval.py --mcp-live-smoke
+```
+
+That command should print `MCP` as `1` or more.
 
 ## Procedure
 
-1. Run the prompt against config A. Note: how many `terminal` / `grep` calls, how many file reads, did it find the answer?
-2. Run against config B. Note the same plus how many `search_code` calls, and whether the agent actually *uses* the new tool or sticks with `grep`.
+1. Run the exact prompt against config A. Note: how many `terminal` / `grep` calls, how many file reads, did it find the answer?
+2. Run the synonym prompt against config A: `"How does the canvas pick which backend to talk to?"`
+3. Run the synonym prompt against config B. Note the same plus how many `search_code` calls, and whether the agent actually *uses* the new tool or sticks with `grep`.
 
 ## What to look for
 
 - For a repo where the query and source share vocabulary (`VITE_BACKEND_HOST` is mentioned by exact name), `grep` wins on latency and accuracy. Semantic adds turns without adding answers.
-- Switch the prompt to something with a synonym gap (`"how does the canvas pick which backend to talk to"`) and the math can flip. Run that version too if you have budget; the contrast is the point.
+- Switch the prompt to something with a synonym gap (`"how does the canvas pick which backend to talk to"`). A strong flagship may still recover by grepping adjacent terms like `backend` and `proxy`; that is useful data, not a failure of the lesson.
+- MCP earns its slot only when `search_code` reduces misses or avoids expensive wandering. If the MCP-call column is zero, the model did not need or choose the tool. This server is intentionally small: BM25-style scoring plus a few synonym expansions, not an embeddings service.
 
 > Connection to the talk: slide 27 (BM25 makes grep instant) and slides 29-31 (when embeddings earn their keep). Don't take this on faith. Measure on *your* repo.
+
+In one live run on `agent-canvas`, lexical exact took 46 events / 91.5s / $0.25, while lexical synonym took 42 events / 58.8s / $0.17. That result supports the default rule: strong models often bridge small vocabulary gaps without extra retrieval infrastructure.
 
 ## What you keep
 

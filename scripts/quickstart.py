@@ -23,6 +23,12 @@ import os
 import sys
 from pathlib import Path
 
+PROJECTS_DIR = Path(__file__).resolve().parents[1] / "projects"
+if str(PROJECTS_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECTS_DIR))
+
+from _runtime import resolve_server_working_dir
+
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 
 
@@ -43,11 +49,7 @@ def require_env(name: str) -> str:
 
 
 def resolve_working_dir() -> str:
-    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
-    if not path.exists():
-        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
-        raise SystemExit(2)
-    return str(path)
+    return resolve_server_working_dir()
 
 
 def main() -> None:

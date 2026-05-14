@@ -27,8 +27,7 @@ summary claims one number, while the evidence table says another.
 ## How To Score Existing Reports
 
 ```bash
-uv run --with openhands-sdk --with openhands-tools \
-  python projects/p04-decomposition/solution/run_decomposition.py \
+uv run python projects/p04-decomposition/solution/score_report.py \
   --score-report monolith=.openhands-runs/p04-decomposition/p04_monolith_xxxxxxxx/repo/RELEASE_READINESS.md \
   --score-report decomposed=.openhands-runs/p04-decomposition/p04_decomposed_xxxxxxxx/repo/RELEASE_READINESS.md
 ```

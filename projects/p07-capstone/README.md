@@ -11,8 +11,8 @@
 
 | Directory | What's inside |
 |---|---|
-| `starter/` | `harness.py`. skeleton with imports and TODO placeholders for every kept artifact from P01-P06. |
-| `solution/` | `harness.py`. complete capstone wiring routing, tools, security policy, Docker sandbox, and a critic placeholder you can enable after P07a. |
+| `starter/` | `evaluate.py` scaffolds the repeated-run critic experiment. `harness.py` is the capstone skeleton with TODO placeholders for every kept artifact from P01-P06. |
+| `solution/` | `evaluate.py` runs no-critic vs. critic trials and scores them. `harness.py` wires routing, tools, security policy, Docker sandbox, and an optional API critic. |
 
 ---
 
@@ -28,6 +28,39 @@ The talk is unambiguous on slide 97: a critic is the multi-agent pattern that ea
   - **A: no critic:** `get_default_agent(llm=llm)` and `conversation.run()` once. Whatever it produces is the answer.
   - **B: critic with iterative refinement:** add `critic=...` to the `Agent` and an `IterativeRefinementConfig` with a `success_threshold` and `max_iterations`. `conversation.run()` will loop internally until the critic clears the threshold or you hit the cap.
 
+The solution ships a small checkable `wordstats` task and a deterministic
+scorer. Start with the dry run:
+
+```bash
+cd solution
+uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
+  python evaluate.py --dry-run --trials 1 --config both
+```
+
+The critic block used by the evaluator and capstone harness is:
+
+```python
+from openhands.sdk.critic import APIBasedCritic, IterativeRefinementConfig
+
+iterative = IterativeRefinementConfig(success_threshold=0.7, max_iterations=3)
+critic = APIBasedCritic(
+    server_url=os.environ.get("CRITIC_SERVER_URL", "https://llm-proxy.app.all-hands.dev/vllm"),
+    api_key=os.environ.get("CRITIC_API_KEY", os.environ["LLM_API_KEY"]),
+    model_name=os.environ.get("CRITIC_MODEL_NAME", "critic"),
+    iterative_refinement=iterative,
+)
+```
+
+`success_threshold=0.7` means "keep refining while the API critic estimates
+success below 70%." It is not the deterministic pass/fail score. The pass/fail
+score comes from the same rubric for every trial:
+
+```text
+Pass only if stats.py exposes analyze_file, cli.py runs, empty files return
+zeros, word rules handle hyphens/contractions/numbers, and missing files fail
+cleanly.
+```
+
 ### Procedure
 
 **Run each config five times.** This is the project where one-off measurements lie hardest. Score each run pass/fail against the same rubric. Track:
@@ -36,6 +69,21 @@ The talk is unambiguous on slide 97: a critic is the multi-agent pattern that ea
 |---|---|---|---|---|
 | A no critic | _e.g._ 2/5 | 1 | $0.04 | 30s |
 | B critic, threshold 0.7, max 3 | _e.g._ 4/5 | 2 | $0.11 | 90s |
+
+The solution command prints this table and writes each scored workspace under
+`.openhands-runs/p07-evaluate/`:
+
+```bash
+uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
+  python evaluate.py --trials 5 --config both
+```
+
+To score an existing workspace without model calls:
+
+```bash
+uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
+  python evaluate.py --score-only /path/to/generated/workspace
+```
 
 ### What to look for
 
@@ -61,6 +109,9 @@ The talk is unambiguous on slide 97: a critic is the multi-agent pattern that ea
 1. Open `starter/harness.py`. Fill in the TODO blocks with the artifacts you kept from P01-P07a.
 2. Pick a fresh repo you haven't run the agent against. A public open-source library you actually use is best.
 3. Run `WORKSPACE_DIR=/path/to/repo uv run --with openhands-sdk --with openhands-tools --with openhands-workspace python harness.py "your real task"`.
+   P07 defaults to Docker host port `8020` so it does not collide with the P06
+   `8010` example. If that port is busy, set `HARNESS_PORT=8021` or another
+   free port.
 4. Watch the agent trace. Confirm:
    - The router sends work to the expected model leg (read per-`usage_id` metrics).
    - Your tool list is the active one.

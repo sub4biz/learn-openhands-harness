@@ -6,6 +6,9 @@ Run with:
 Cheap verification:
     uv run --with openhands-sdk --with openhands-tools python run_decomposition.py --dry-run
 
+Optional env vars:
+    P04_MAX_ITERATIONS (default 60 per agent run)
+
 TODO:
     1. Add scoped prompts for docs, setup, safety, and project structure.
     2. Run each scoped prompt on the same copied workspace.
@@ -23,11 +26,18 @@ import sys
 import tempfile
 import textwrap
 import time
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+
+PROJECTS_DIR = Path(__file__).resolve().parents[2]
+if str(PROJECTS_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECTS_DIR))
+
+from _runtime import resolve_api_key, resolve_host_working_dir, server_visible_path
 
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 DEFAULT_SERVER = "http://127.0.0.1:18000"
+DEFAULT_MAX_ITERATIONS = 60
 
 IGNORE_PATTERNS = shutil.ignore_patterns(
     ".git",
@@ -81,20 +91,7 @@ def load_dotenv() -> None:
 
 
 def resolve_workspace(value: str | None) -> Path:
-    raw = value or os.environ.get("WORKSPACE_DIR") or "."
-    path = Path(raw).expanduser().resolve()
-    if not path.exists() or not path.is_dir():
-        print(f"Workspace does not exist or is not a directory: {path}", file=sys.stderr)
-        raise SystemExit(2)
-    return path
-
-
-def resolve_server_api_key() -> str | None:
-    key = os.environ.get("AGENT_SERVER_API_KEY")
-    if key:
-        return key
-    path = Path.home() / ".openhands" / "agent-canvas" / "session-api-key.txt"
-    return path.read_text().strip() if path.exists() else None
+    return resolve_host_working_dir(value)
 
 
 def copy_workspace(source: Path) -> Path:
@@ -105,23 +102,6 @@ def copy_workspace(source: Path) -> Path:
     destination = Path(tempfile.mkdtemp(prefix="p04_monolith_", dir=run_root)) / "repo"
     shutil.copytree(source, destination, ignore=IGNORE_PATTERNS)
     return destination
-
-
-def server_visible_path(path: Path) -> str:
-    host_root_raw = os.environ.get("AGENT_WORKSPACE_HOST_ROOT") or os.environ.get("PROJECT_PATH")
-    server_root_raw = os.environ.get("AGENT_WORKSPACE_SERVER_ROOT")
-    if host_root_raw and not server_root_raw:
-        server_root_raw = "/projects"
-    if not host_root_raw or not server_root_raw:
-        return str(path)
-
-    host_root = Path(host_root_raw).expanduser().resolve()
-    resolved = path.expanduser().resolve()
-    try:
-        relative = resolved.relative_to(host_root)
-    except ValueError:
-        return str(resolved)
-    return str(PurePosixPath(server_root_raw) / PurePosixPath(relative.as_posix()))
 
 
 def require_live_env() -> tuple[str, str, str]:
@@ -136,7 +116,7 @@ def require_live_env() -> tuple[str, str, str]:
 
 
 def resolve_max_iterations() -> int:
-    raw = os.environ.get("P04_MAX_ITERATIONS", "24")
+    raw = os.environ.get("P04_MAX_ITERATIONS", str(DEFAULT_MAX_ITERATIONS))
     try:
         value = int(raw)
     except ValueError:
@@ -148,33 +128,103 @@ def resolve_max_iterations() -> int:
     return value
 
 
+def _event_line(event) -> str:
+    event_type = type(event).__name__
+    tool = getattr(event, "tool", None) or getattr(event, "tool_name", None)
+    summary = getattr(event, "summary", None)
+    content = getattr(event, "content", None)
+    text = str(summary or tool or content or event).replace("\n", " ")
+    if len(text) > 220:
+        text = text[:217].rstrip() + "..."
+    return f"- {event_type}: {text}"
+
+
+def write_truncated_artifact(
+    working_dir: Path,
+    exc: Exception,
+    conversation,
+    wall_seconds: float,
+    max_iterations: int,
+) -> Path:
+    try:
+        conversation.state.refresh_from_server()
+    except Exception:
+        pass
+
+    events = list(conversation.state.events)
+    partial_report = working_dir / "RELEASE_READINESS.md"
+    artifact = working_dir / "MONOLITH_TRUNCATED.md"
+    lines = [
+        "# Monolith Run Truncated",
+        "",
+        "This run did not complete. The harness kept this artifact so the",
+        "failed monolithic attempt can be compared against a decomposed run",
+        "instead of disappearing behind a stack trace.",
+        "",
+        f"- Max iterations: {max_iterations}",
+        f"- Wall time before failure: {wall_seconds:.1f}s",
+        f"- Events captured: {len(events)}",
+        f"- Exception: `{type(exc).__name__}: {exc}`",
+        "",
+        "## Partial RELEASE_READINESS.md",
+        "",
+    ]
+    if partial_report.exists():
+        lines.append(partial_report.read_text(encoding="utf-8", errors="replace"))
+    else:
+        lines.append("The agent did not write `RELEASE_READINESS.md` before stopping.")
+    lines.extend(["", "## Recent Events", ""])
+    lines.extend(_event_line(event) for event in events[-20:])
+    lines.append("")
+    artifact.write_text("\n".join(lines), encoding="utf-8")
+    return artifact
+
+
 def run_prompt(llm, server: str, working_dir: Path, prompt: str) -> dict:
     from openhands.sdk import Conversation, RemoteConversation, Workspace
+    from openhands.sdk.conversation.exceptions import ConversationRunError
     from openhands.tools.preset.default import get_default_agent
 
+    max_iterations = resolve_max_iterations()
     agent = get_default_agent(llm=llm, cli_mode=True)
     workspace = Workspace(
         host=server,
-        api_key=resolve_server_api_key(),
+        api_key=resolve_api_key(),
         working_dir=server_visible_path(working_dir),
     )
     conversation = Conversation(
         agent=agent,
         workspace=workspace,
-        max_iteration_per_run=resolve_max_iterations(),
+        max_iteration_per_run=max_iterations,
     )
     assert isinstance(conversation, RemoteConversation)
 
     try:
         t0 = time.time()
         conversation.send_message(prompt)
-        conversation.run()
-        wall = time.time() - t0
+        failed = False
+        artifact = None
+        try:
+            conversation.run()
+        except ConversationRunError as exc:
+            failed = True
+            wall = time.time() - t0
+            artifact = write_truncated_artifact(
+                working_dir,
+                exc,
+                conversation,
+                wall,
+                max_iterations,
+            )
+        else:
+            wall = time.time() - t0
         metrics = conversation.conversation_stats.get_combined_metrics()
         return {
+            "status": "failed" if failed else "ok",
             "events": len(conversation.state.events),
             "wall": wall,
             "cost": float(getattr(metrics, "accumulated_cost", 0.0) or 0.0),
+            "artifact": artifact,
         }
     finally:
         conversation.close()
@@ -204,9 +254,12 @@ def main() -> None:
     print(f"Agent-server working_dir: {server_visible_path(copied_workspace)}")
     result = run_prompt(llm, server, copied_workspace, MONOLITH_PROMPT)
     print(
-        f"monolith events={result['events']} wall={result['wall']:.1f}s "
+        f"monolith status={result['status']} events={result['events']} "
+        f"wall={result['wall']:.1f}s "
         f"cost=${result['cost']:.4f}"
     )
+    if result["artifact"]:
+        print(f"truncated artifact: {result['artifact']}")
     print("Next: split the task into scoped checks and compare the final reports.")
 
 

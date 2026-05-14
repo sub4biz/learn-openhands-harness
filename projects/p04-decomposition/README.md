@@ -14,7 +14,7 @@ The inspiration is the Harvey LAB / "Trust Your Harness" pattern: hold the model
 | Directory | What's inside |
 |---|---|
 | `starter/` | `run_decomposition.py`. runs the monolithic task and leaves TODOs for the decomposed workflow. |
-| `solution/` | `run_decomposition.py`. runs monolithic and decomposed workflows on copied workspaces. Plus `decomposition_plan.md` and `evaluation_rubric.md`, the artifacts to keep. |
+| `solution/` | `run_decomposition.py` runs monolithic and decomposed workflows on copied workspaces. `score_report.py` scores saved reports. `decomposition_plan.md` and `evaluation_rubric.md` are the artifacts to keep. |
 
 ## Setup
 
@@ -46,9 +46,18 @@ WORKSPACE_DIR=/path/to/repo \
 uv run --with openhands-sdk --with openhands-tools python run_decomposition.py
 ```
 
-If your agent server is Dockerized with Agent Canvas `npm run dev:docker`,
-the server sees your `PROJECT_PATH` mount at `/projects`. Run the script from
-the same shell where `PROJECT_PATH` is set, or pass the mapping explicitly:
+The default cap is `P04_MAX_ITERATIONS=60` per agent run. Earlier versions used
+24, which can make the monolithic run die before producing a useful comparison
+on a non-trivial repo.
+
+If the monolithic run still hits the cap, the script writes
+`MONOLITH_TRUNCATED.md` in the copied workspace and continues. Treat that as a
+result: "the one-prompt version could not finish under this budget."
+
+If your agent server is Dockerized with Agent Canvas `npm run dev` or
+`npm run dev:docker`, the server sees your `PROJECT_PATH` mount at `/projects`.
+Run the script from the same shell where `PROJECT_PATH` is set, or pass the
+mapping explicitly:
 
 ```bash
 AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects \
@@ -68,7 +77,7 @@ is ignored by git. If a decomposed run is interrupted after one or more scoped
 reports have been written, resume from that copied workspace:
 
 ```bash
-P04_MAX_ITERATIONS=12 \
+P04_MAX_ITERATIONS=30 \
 uv run --with openhands-sdk --with openhands-tools python run_decomposition.py \
   --mode decomposed \
   --resume-dir .openhands-runs/p04-decomposition/p04_decomposed_xxxxxxxx/repo
@@ -78,8 +87,7 @@ The solution runner prints a rubric scorecard after live runs. To score saved
 reports later without making model calls, run from the repo root:
 
 ```bash
-uv run --with openhands-sdk --with openhands-tools \
-  python projects/p04-decomposition/solution/run_decomposition.py \
+uv run python projects/p04-decomposition/solution/score_report.py \
   --score-report monolith=.openhands-runs/p04-decomposition/p04_monolith_xxxxxxxx/repo/RELEASE_READINESS.md \
   --score-report decomposed=.openhands-runs/p04-decomposition/p04_decomposed_xxxxxxxx/repo/RELEASE_READINESS.md
 ```

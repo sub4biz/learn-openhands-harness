@@ -15,9 +15,18 @@ import time
 from collections import Counter
 from pathlib import Path
 
+PROJECTS_DIR = Path(__file__).resolve().parents[2]
+if str(PROJECTS_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECTS_DIR))
+
 from pydantic import SecretStr
 from openhands.sdk import LLM, Conversation, RemoteConversation, Workspace
 from openhands.tools.preset.default import get_default_agent
+from _runtime import (
+    resolve_api_key,
+    resolve_server_working_dir as resolve_working_dir,
+    token_counts,
+)
 
 PROMPT = (
     "Find every place VITE_BACKEND_HOST is read or set, "
@@ -33,22 +42,6 @@ def require_env(name: str) -> str:
         print(f"Missing required environment variable: {name}", file=sys.stderr)
         raise SystemExit(2)
     return value
-
-
-def resolve_api_key() -> str | None:
-    key = os.environ.get("AGENT_SERVER_API_KEY")
-    if key:
-        return key
-    path = Path.home() / ".openhands" / "agent-canvas" / "session-api-key.txt"
-    return path.read_text().strip() if path.exists() else None
-
-
-def resolve_working_dir() -> str:
-    path = Path(os.environ.get("WORKSPACE_DIR", Path.cwd())).expanduser().resolve()
-    if not path.exists():
-        print(f"WORKSPACE_DIR does not exist: {path}", file=sys.stderr)
-        raise SystemExit(2)
-    return str(path)
 
 
 def print_trace_summary(conversation: RemoteConversation, wall_seconds: float) -> None:
@@ -80,6 +73,7 @@ def print_trace_summary(conversation: RemoteConversation, wall_seconds: float) -
             compaction_fired = True
 
     metrics = conversation.conversation_stats.get_combined_metrics()
+    prompt_tokens, completion_tokens = token_counts(metrics)
 
     print("\n" + "=" * 60)
     print("TRACE SUMMARY")
@@ -89,8 +83,8 @@ def print_trace_summary(conversation: RemoteConversation, wall_seconds: float) -
     print(f"  Total events   : {len(events)}")
     print(f"  Wall-clock     : {wall_seconds:.1f}s")
     print(f"  Cost           : ${metrics.accumulated_cost:.4f}")
-    print(f"  Tokens (in)    : {metrics.accumulated_prompt_tokens}")
-    print(f"  Tokens (out)   : {metrics.accumulated_completion_tokens}")
+    print(f"  Tokens (in)    : {prompt_tokens}")
+    print(f"  Tokens (out)   : {completion_tokens}")
     print()
     print("  Tool calls by type:")
     for tool, count in tool_calls.most_common():

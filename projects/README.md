@@ -23,7 +23,7 @@ PROJECT EVOLUTION (OpenHands harness)
        |                                     + trace-reading checklist
        v
   P02  Model routing                 → RIGHT-SIZE THE THINKING
-       |                               keep: a RouterLLM / LLMRegistry config
+       |                               keep: a routing policy / LLMRegistry config
        v
   P03  Retrieval                     → STOP HALLUCINATED PATHS
        |                               keep: a one-line decision rule
@@ -108,6 +108,28 @@ set +a
 `WORKSPACE_DIR` should point at the repo you are studying. If omitted, the
 scripts use the current directory.
 
+If your Agent Canvas server is Dockerized (`npm run dev` or `npm run dev:docker`
+in some checkouts), remember that the server sees your project root at
+`/projects`. Either pass a server-visible path:
+
+```bash
+WORKSPACE_DIR=/projects/agent-canvas \
+uv run --with openhands-sdk --with openhands-tools python run_baseline.py
+```
+
+or keep `WORKSPACE_DIR` as a host path and tell the scripts how to map it:
+
+```bash
+AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects \
+AGENT_WORKSPACE_SERVER_ROOT=/projects \
+WORKSPACE_DIR=/path/to/your/projects/agent-canvas \
+uv run --with openhands-sdk --with openhands-tools python run_baseline.py
+```
+
+For scripts that copy a workspace before running, such as P05, use the host-path
+form with the mapping variables so the script can copy locally and then pass the
+mapped `/projects/...` path to the server.
+
 ---
 
 ## Tabulating your results
@@ -139,8 +161,9 @@ Prompt: "Find every place VITE_BACKEND_HOST is read or set..."
 ## P03: Retrieval
 | Config | Tool calls (grep) | Tool calls (MCP) | Correct | Notes |
 |---|---|---|---|---|
-| Lexical only | | — | | |
-| Lexical + MCP | | | | |
+| Lexical exact | | - | | |
+| Lexical synonym | | - | | |
+| MCP synonym | | | | |
 
 ## P04: Task decomposition
 | Config | Events | Cost | Correct | Notes |
@@ -194,7 +217,7 @@ Keep these as supporting tools, not the tutorial spine:
 
 - **Hooks** are useful for hard-deny rules and protocol checks, but Claude Code has hooks too. Use them when they enforce your P06 safety profile. ([Hooks guide](https://docs.openhands.dev/sdk/guides/hooks).)
 - **Custom tools** matter when the schema changes behavior. "The agent can call another API" is not interesting by itself. ([Custom tools guide](https://docs.openhands.dev/sdk/guides/custom-tools).)
-- **MCP** belongs in the retrieval ablation. It is table stakes unless the experiment proves it improves a vocabulary-mismatch task.
+- **MCP** belongs in the retrieval ablation. P03 ships a small `search_code` MCP server so the experiment is real, but the decision rule still has to come from traces: keep it off unless it improves a vocabulary-mismatch task.
 - **File-based agents and parallel tool execution** should wait until the single-agent trace is boring. They add coordination cost and shared-state risk. ([File-Based Agents guide](https://docs.openhands.dev/sdk/guides/agent-file-based), [Parallel Tool Execution guide](https://docs.openhands.dev/sdk/guides/parallel-tool-execution).)
 
 That is the line this tutorial should hold: integrations are supporting cast; open harness ownership is the point.

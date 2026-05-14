@@ -10,25 +10,37 @@ Required env vars for live mode: LLM_API_KEY
 Optional: LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
           AGENT_SERVER (default http://127.0.0.1:18000)
           WORKSPACE_DIR (default current directory)
-          P04_MAX_ITERATIONS (default 24 per agent run)
+          P04_MAX_ITERATIONS (default 60 per agent run)
 """
 
 from __future__ import annotations
 
 import argparse
 import os
-import re
 import shutil
 import sys
 import tempfile
 import textwrap
 import time
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+
+PROJECTS_DIR = Path(__file__).resolve().parents[2]
+if str(PROJECTS_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECTS_DIR))
+
+from _runtime import (
+    resolve_api_key,
+    resolve_host_working_dir,
+    server_visible_path,
+    token_counts,
+)
+from score_report import parse_score_spec, print_scorecards
 
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 DEFAULT_SERVER = "http://127.0.0.1:18000"
+DEFAULT_MAX_ITERATIONS = 60
 
 IGNORE_PATTERNS = shutil.ignore_patterns(
     ".git",
@@ -73,96 +85,6 @@ class Step:
     label: str
     output: str
     prompt: str
-
-
-@dataclass(frozen=True)
-class RubricItem:
-    id: str
-    priority: str
-    title: str
-    patterns: tuple[str, ...]
-
-
-RUBRIC_ITEMS = [
-    RubricItem(
-        id="agent_canvas_prereq",
-        priority="P0",
-        title="Identifies agent-canvas as a required external repo/prerequisite",
-        patterns=(
-            r"agent-canvas.{0,180}(missing|not listed|not stated|undocumented|required external|prerequisite)",
-            r"(missing|not listed|not stated|undocumented|required external).{0,180}agent-canvas",
-        ),
-    ),
-    RubricItem(
-        id="agent_server_running",
-        priority="P0",
-        title="Identifies that SDK scripts require a running agent server",
-        patterns=(
-            r"(agent server|agent-server).{0,180}(must be running|undocumented|connection refused|already running|server dependency)",
-            r"(must be running|connection refused|undocumented).{0,180}(agent server|agent-server)",
-        ),
-    ),
-    RubricItem(
-        id="api_key_validation",
-        priority="P0",
-        title="Identifies weak or late LLM_API_KEY validation",
-        patterns=(
-            r"(llm_api_key|api key).{0,180}(validation|empty|not set|too late|missing)",
-            r"(validation|empty|not set|too late|missing).{0,180}(llm_api_key|api key)",
-        ),
-    ),
-    RubricItem(
-        id="docker_requirement",
-        priority="P0",
-        title="Identifies Docker/P06-P07 requirement or dockerless risk clarity",
-        patterns=(
-            r"docker.{0,180}(required|hidden|buried|p06-p07|p06.*p07|real work)",
-            r"(required|hidden|buried|p06-p07|p06.*p07|real work).{0,180}docker",
-        ),
-    ),
-    RubricItem(
-        id="correct_release_verdict",
-        priority="P0",
-        title="Gives a not-ready/do-not-release verdict when blockers are present",
-        patterns=(r"not ready|do not release|not release publicly|not ready for public release",),
-    ),
-    RubricItem(
-        id="safety_warning_prominence",
-        priority="P1",
-        title="Checks prominence of dockerless safety warnings",
-        patterns=(
-            r"(safety|dockerless|danger).{0,180}(warning|prominent|earlier|banner|placement)",
-            r"(warning|prominent|earlier|banner|placement).{0,180}(safety|dockerless|danger)",
-        ),
-    ),
-    RubricItem(
-        id="project_title_consistency",
-        priority="P1",
-        title="Checks project title/name/capitalization consistency",
-        patterns=(
-            r"(title|project names|capitalization).{0,180}(inconsistent|consistency)",
-            r"(inconsistent|consistency).{0,180}(title|project names|capitalization)",
-        ),
-    ),
-    RubricItem(
-        id="workspace_dir_default",
-        priority="P1",
-        title="Checks ambiguous WORKSPACE_DIR/default working directory behavior",
-        patterns=(
-            r"(workspace_dir|working directory).{0,180}(default|ambiguous|explicit)",
-            r"(default|ambiguous|explicit).{0,180}(workspace_dir|working directory)",
-        ),
-    ),
-    RubricItem(
-        id="dependency_clarity",
-        priority="P1",
-        title="Checks per-project package/dependency clarity",
-        patterns=(
-            r"(dependencies|package|--with).{0,180}(unclear|ambiguous|document)",
-            r"(unclear|ambiguous|document).{0,180}(dependencies|package|--with)",
-        ),
-    ),
-]
 
 
 DECOMPOSED_STEPS = [
@@ -287,23 +209,7 @@ def load_dotenv() -> None:
 
 
 def resolve_workspace(value: str | None) -> Path:
-    raw = value or os.environ.get("WORKSPACE_DIR") or "."
-    path = Path(raw).expanduser().resolve()
-    if not path.exists():
-        print(f"Workspace does not exist: {path}", file=sys.stderr)
-        raise SystemExit(2)
-    if not path.is_dir():
-        print(f"Workspace is not a directory: {path}", file=sys.stderr)
-        raise SystemExit(2)
-    return path
-
-
-def resolve_server_api_key() -> str | None:
-    key = os.environ.get("AGENT_SERVER_API_KEY")
-    if key:
-        return key
-    path = Path.home() / ".openhands" / "agent-canvas" / "session-api-key.txt"
-    return path.read_text().strip() if path.exists() else None
+    return resolve_host_working_dir(value)
 
 
 def copy_workspace(source: Path, prefix: str) -> Path:
@@ -314,23 +220,6 @@ def copy_workspace(source: Path, prefix: str) -> Path:
     destination = Path(tempfile.mkdtemp(prefix=prefix, dir=run_root)) / "repo"
     shutil.copytree(source, destination, ignore=IGNORE_PATTERNS)
     return destination
-
-
-def server_visible_path(path: Path) -> str:
-    host_root_raw = os.environ.get("AGENT_WORKSPACE_HOST_ROOT") or os.environ.get("PROJECT_PATH")
-    server_root_raw = os.environ.get("AGENT_WORKSPACE_SERVER_ROOT")
-    if host_root_raw and not server_root_raw:
-        server_root_raw = "/projects"
-    if not host_root_raw or not server_root_raw:
-        return str(path)
-
-    host_root = Path(host_root_raw).expanduser().resolve()
-    resolved = path.expanduser().resolve()
-    try:
-        relative = resolved.relative_to(host_root)
-    except ValueError:
-        return str(resolved)
-    return str(PurePosixPath(server_root_raw) / PurePosixPath(relative.as_posix()))
 
 
 def print_dry_run(mode: str, workspace: Path) -> None:
@@ -349,103 +238,6 @@ def print_dry_run(mode: str, workspace: Path) -> None:
         print(textwrap.indent(AGGREGATE_PROMPT.strip(), "  "))
 
 
-def parse_score_spec(spec: str) -> tuple[str, Path]:
-    if "=" in spec:
-        label, _, raw_path = spec.partition("=")
-        return label.strip() or Path(raw_path).stem, Path(raw_path).expanduser()
-    path = Path(spec).expanduser()
-    return path.parent.name or path.stem, path
-
-
-def matches_rubric_item(text: str, item: RubricItem) -> bool:
-    return any(re.search(pattern, text, flags=re.DOTALL) for pattern in item.patterns)
-
-
-def declared_p0_count(text: str) -> int | None:
-    head = text[:2500].lower()
-    if "no critical blockers (p0)" in head or "no p0" in head:
-        return 0
-    patterns = [
-        r"(\d+)\s+critical\s+\(p0\)",
-        r"(\d+)\s+p0\s+(?:issues|blockers|findings)",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, head)
-        if match:
-            return int(match.group(1))
-    return None
-
-
-def p0_table_count(text: str) -> int:
-    return len(re.findall(r"^\|\s*P0-\d+\s*\|", text, flags=re.MULTILINE))
-
-
-def score_report(report_path: Path) -> dict:
-    if not report_path.exists():
-        return {
-            "path": report_path,
-            "error": f"Report does not exist: {report_path}",
-        }
-    text = report_path.read_text(encoding="utf-8")
-    lowered = text.lower()
-    hits = [item for item in RUBRIC_ITEMS if matches_rubric_item(lowered, item)]
-    misses = [item for item in RUBRIC_ITEMS if item not in hits]
-    declared = declared_p0_count(text)
-    table_count = p0_table_count(text)
-    count_ok = declared is None or declared == table_count
-    return {
-        "path": report_path,
-        "hits": hits,
-        "misses": misses,
-        "declared_p0": declared,
-        "table_p0": table_count,
-        "count_ok": count_ok,
-        "line_count": len(text.splitlines()),
-    }
-
-
-def print_scorecards(specs: list[tuple[str, Path]]) -> None:
-    if not specs:
-        return
-    print("\n" + "=" * 92)
-    print("Rubric scorecard")
-    print("-" * 92)
-    print(
-        f"{'Report':<24} {'Coverage':>10} {'P0 rows':>8} "
-        f"{'Declared P0':>12} {'Count OK':>9} {'Lines':>7}"
-    )
-    print("-" * 92)
-    scored = []
-    for label, path in specs:
-        result = score_report(path)
-        scored.append((label, result))
-        if "error" in result:
-            print(f"{label:<24} ERROR: {result['error']}")
-            continue
-        declared = "n/a" if result["declared_p0"] is None else str(result["declared_p0"])
-        print(
-            f"{label:<24} {len(result['hits']):>3}/{len(RUBRIC_ITEMS):<6} "
-            f"{result['table_p0']:>8} {declared:>12} "
-            f"{'yes' if result['count_ok'] else 'no':>9} {result['line_count']:>7}"
-        )
-
-    print("\nMissed rubric items:")
-    for label, result in scored:
-        if "error" in result:
-            continue
-        if not result["misses"] and result["count_ok"]:
-            print(f"- {label}: none")
-            continue
-        for item in result["misses"]:
-            print(f"- {label}: MISS {item.priority} {item.id} - {item.title}")
-        if not result["count_ok"]:
-            print(
-                f"- {label}: FAIL report_count_consistency - declared "
-                f"{result['declared_p0']} P0 issues but table lists {result['table_p0']}"
-            )
-    print("=" * 92)
-
-
 def require_live_env() -> tuple[str, str, str]:
     load_dotenv()
     api_key = os.environ.get("LLM_API_KEY")
@@ -458,7 +250,7 @@ def require_live_env() -> tuple[str, str, str]:
 
 
 def resolve_max_iterations() -> int:
-    raw = os.environ.get("P04_MAX_ITERATIONS", "24")
+    raw = os.environ.get("P04_MAX_ITERATIONS", str(DEFAULT_MAX_ITERATIONS))
     try:
         value = int(raw)
     except ValueError:
@@ -470,6 +262,75 @@ def resolve_max_iterations() -> int:
     return value
 
 
+def _event_line(event) -> str:
+    event_type = type(event).__name__
+    tool = getattr(event, "tool", None) or getattr(event, "tool_name", None)
+    summary = getattr(event, "summary", None)
+    content = getattr(event, "content", None)
+    text = str(summary or tool or content or event).replace("\n", " ")
+    if len(text) > 220:
+        text = text[:217].rstrip() + "..."
+    return f"- {event_type}: {text}"
+
+
+def write_truncated_artifact(
+    working_dir: Path,
+    artifact_name: str,
+    label: str,
+    exc: Exception,
+    conversation,
+    wall_seconds: float,
+    max_iterations: int,
+) -> Path:
+    """Persist a readable artifact when an agent run stops before completion."""
+    try:
+        conversation.state.refresh_from_server()
+    except Exception:
+        pass
+
+    events = list(conversation.state.events)
+    partial_report = working_dir / "RELEASE_READINESS.md"
+    artifact = working_dir / artifact_name
+    lines = [
+        f"# {label} Run Truncated",
+        "",
+        "This run did not complete. The harness kept this artifact so the",
+        "failed monolithic attempt can be compared against the decomposed run",
+        "instead of disappearing behind a stack trace.",
+        "",
+        f"- Max iterations: {max_iterations}",
+        f"- Wall time before failure: {wall_seconds:.1f}s",
+        f"- Events captured: {len(events)}",
+        f"- Exception: `{type(exc).__name__}: {exc}`",
+        "",
+    ]
+
+    if partial_report.exists():
+        lines.extend(
+            [
+                "## Partial RELEASE_READINESS.md",
+                "",
+                partial_report.read_text(encoding="utf-8", errors="replace"),
+                "",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "## Partial RELEASE_READINESS.md",
+                "",
+                "The agent did not write `RELEASE_READINESS.md` before stopping.",
+                "",
+            ]
+        )
+
+    lines.extend(["## Recent Events", ""])
+    lines.extend(_event_line(event) for event in events[-20:])
+    lines.append("")
+    artifact.write_text("\n".join(lines), encoding="utf-8")
+    return artifact
+
+
 def run_prompt(
     label: str,
     llm,
@@ -477,14 +338,16 @@ def run_prompt(
     working_dir: Path,
     prompt: str,
     max_iterations: int,
+    failure_artifact: str | None = None,
 ) -> dict:
     from openhands.sdk import Conversation, RemoteConversation, Workspace
+    from openhands.sdk.conversation.exceptions import ConversationRunError
     from openhands.tools.preset.default import get_default_agent
 
     agent = get_default_agent(llm=llm, cli_mode=True)
     workspace = Workspace(
         host=server,
-        api_key=resolve_server_api_key(),
+        api_key=resolve_api_key(),
         working_dir=server_visible_path(working_dir),
     )
     conversation = Conversation(
@@ -497,16 +360,37 @@ def run_prompt(
     try:
         t0 = time.time()
         conversation.send_message(prompt)
-        conversation.run()
-        wall = time.time() - t0
+        failed = False
+        artifact_path = None
+        try:
+            conversation.run()
+        except ConversationRunError as exc:
+            if not failure_artifact:
+                raise
+            failed = True
+            wall = time.time() - t0
+            artifact_path = write_truncated_artifact(
+                working_dir,
+                failure_artifact,
+                label,
+                exc,
+                conversation,
+                wall,
+                max_iterations,
+            )
+        else:
+            wall = time.time() - t0
         metrics = conversation.conversation_stats.get_combined_metrics()
+        prompt_tokens, completion_tokens = token_counts(metrics)
         return {
             "label": label,
+            "status": "failed" if failed else "ok",
             "events": len(conversation.state.events),
             "wall": wall,
             "cost": float(getattr(metrics, "accumulated_cost", 0.0) or 0.0),
-            "tokens_in": int(getattr(metrics, "accumulated_prompt_tokens", 0) or 0),
-            "tokens_out": int(getattr(metrics, "accumulated_completion_tokens", 0) or 0),
+            "tokens_in": prompt_tokens,
+            "tokens_out": completion_tokens,
+            "artifact": artifact_path,
         }
     finally:
         conversation.close()
@@ -548,10 +432,18 @@ def run_live(mode: str, workspace: Path, resume_dir: Path | None) -> None:
         mono_dir = copy_workspace(workspace, "p04_monolith_")
         print(f"\n--- Config A: monolithic task ({mono_dir}) ---")
         print(f"Agent-server working_dir: {server_visible_path(mono_dir)}")
-        results.append(
-            run_prompt("monolith", llm, server, mono_dir, MONOLITH_PROMPT, max_iterations)
+        result = run_prompt(
+            "monolith",
+            llm,
+            server,
+            mono_dir,
+            MONOLITH_PROMPT,
+            max_iterations,
+            failure_artifact="MONOLITH_TRUNCATED.md",
         )
-        report_specs.append(("monolith", mono_dir / "RELEASE_READINESS.md"))
+        results.append(result)
+        report_path = result["artifact"] or mono_dir / "RELEASE_READINESS.md"
+        report_specs.append(("monolith", report_path))
 
     if mode in {"both", "decomposed"}:
         decomp_dir = resume_dir or copy_workspace(workspace, "p04_decomposed_")
@@ -578,11 +470,13 @@ def run_live(mode: str, workspace: Path, resume_dir: Path | None) -> None:
                 results.append(
                     {
                         "label": f"decomposed:{step.label}:failed",
+                        "status": "failed",
                         "events": 0,
                         "wall": 0.0,
                         "cost": 0.0,
                         "tokens_in": 0,
                         "tokens_out": 0,
+                        "artifact": decomp_dir / step.output,
                     }
                 )
         results.append(
@@ -597,15 +491,21 @@ def run_live(mode: str, workspace: Path, resume_dir: Path | None) -> None:
         )
         report_specs.append(("decomposed", decomp_dir / "RELEASE_READINESS.md"))
 
-    print("\n" + "=" * 86)
-    print(f"{'Step':<24} {'Events':>7} {'Wall':>8} {'Cost':>10} {'Tokens in':>12} {'Tokens out':>12}")
-    print("-" * 86)
+    print("\n" + "=" * 96)
+    print(
+        f"{'Step':<24} {'Status':>8} {'Events':>7} {'Wall':>8} "
+        f"{'Cost':>10} {'Tokens in':>12} {'Tokens out':>12}"
+    )
+    print("-" * 96)
     for row in results:
         print(
-            f"{row['label']:<24} {row['events']:>7} {row['wall']:>7.1f}s "
+            f"{row['label']:<24} {row.get('status', 'ok'):>8} "
+            f"{row['events']:>7} {row['wall']:>7.1f}s "
             f"${row['cost']:>9.4f} {row['tokens_in']:>12} {row['tokens_out']:>12}"
         )
-    print("=" * 86)
+        if row.get("artifact"):
+            print(f"{'':<24} {'artifact':>8} {row['artifact']}")
+    print("=" * 96)
     print_scorecards(report_specs)
     print("\nCompare RELEASE_READINESS.md in each copied workspace.")
     print("The decomposed run should show whether scoped checks improved coverage enough to justify extra calls.")
