@@ -18,7 +18,7 @@
 
 ## P07a: Critic with iterative refinement
 
-The talk is unambiguous on slide 97: a critic is the multi-agent pattern that earns its keep. Reflexion-style critic loops on SWE-bench: 57.9% (random sampling) → 63.6% (success-only) → **73.8%** (iterative critic with rubrics). Boris Cherny's practitioner number is 2–3× quality.
+The [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials) frame critics and iterative refinement as the multi-agent pattern most likely to earn its keep. Reflexion-style critic loops on SWE-bench: 57.9% (random sampling) → 63.6% (success-only) → **73.8%** (iterative critic with rubrics). Boris Cherny's practitioner number is 2–3× quality.
 
 ### Setup
 
@@ -85,6 +85,12 @@ uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
   python evaluate.py --score-only /path/to/generated/workspace
 ```
 
+If you do not have a hosted critic endpoint yet, first run
+`python evaluate.py --trials 1 --config no-critic`. That still verifies the
+Docker workspace, task prompt, trace capture, and deterministic scorer before
+you spend time wiring `CRITIC_SERVER_URL`, `CRITIC_API_KEY`, and
+`CRITIC_MODEL_NAME`.
+
 ### What to look for
 
 - Pass-rate lift is the headline number. If it doesn't move at least 10 to 15 percentage points on a non-trivial task, either your rubric is too lenient or the critic isn't actually scoring the right thing. Read the critic's output before you blame the pattern.
@@ -111,7 +117,9 @@ uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
 3. Run `WORKSPACE_DIR=/path/to/repo uv run --with openhands-sdk --with openhands-tools --with openhands-workspace python harness.py "your real task"`.
    P07 defaults to Docker host port `8020` so it does not collide with the P06
    `8010` example. If that port is busy, set `HARNESS_PORT=8021` or another
-   free port.
+   free port. The capstone mounts the security policy directory read-only at
+   `/openhands-harness-policy/`; override it with `HARNESS_SECURITY_POLICY` if
+   you keep your policy somewhere else.
 4. Watch the agent trace. Confirm:
    - The router sends work to the expected model leg (read per-`usage_id` metrics).
    - Your tool list is the active one.

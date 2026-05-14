@@ -9,6 +9,7 @@ Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
                     WORKSPACE_DIR (default current directory)
 """
 
+import json
 import os
 import sys
 import time
@@ -44,6 +45,27 @@ def require_env(name: str) -> str:
     return value
 
 
+def tool_event_parts(event) -> tuple[str | None, dict]:
+    """Read tool name/arguments across SDK event shape changes."""
+    tool = getattr(event, "tool", None) or getattr(event, "tool_name", None)
+    args = getattr(event, "tool_input", None)
+
+    tool_call = getattr(event, "tool_call", None)
+    if tool_call is not None:
+        tool = tool or getattr(tool_call, "name", None)
+        args = args or getattr(tool_call, "arguments", None)
+
+    if isinstance(args, str):
+        try:
+            args = json.loads(args)
+        except json.JSONDecodeError:
+            args = {}
+    if not isinstance(args, dict):
+        args = {}
+
+    return tool, args
+
+
 def print_trace_summary(conversation: RemoteConversation, wall_seconds: float) -> None:
     """Walk the event list and print a structured summary."""
     events = conversation.state.events
@@ -54,15 +76,16 @@ def print_trace_summary(conversation: RemoteConversation, wall_seconds: float) -
 
     for event in events:
         event_type = getattr(event, "type", None) or type(event).__name__
+        tool, tool_input = tool_event_parts(event)
 
         # Count tool calls by tool name
-        if hasattr(event, "tool") and hasattr(event, "tool_input"):
-            tool_calls[event.tool] += 1
+        if tool:
+            tool_calls[tool] += 1
 
         # Track file operations from tool inputs
-        if hasattr(event, "tool_input") and isinstance(event.tool_input, dict):
-            path = event.tool_input.get("path", "")
-            command = event.tool_input.get("command", "")
+        if tool_input:
+            path = tool_input.get("path", "") or tool_input.get("file_path", "")
+            command = tool_input.get("command", "")
             if command == "view" and path:
                 files_read.append(path)
             elif command in ("str_replace", "create", "insert") and path:

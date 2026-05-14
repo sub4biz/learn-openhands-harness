@@ -9,6 +9,7 @@ Run with:
 Required env vars:  LLM_API_KEY
 Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
                     LLM_MODEL_FLAGSHIP, LLM_MODEL_SMALL, WORKSPACE_DIR
+                    HARNESS_SECURITY_POLICY, HARNESS_PORT
                     HARNESS_ENABLE_CRITIC, CRITIC_SERVER_URL,
                     CRITIC_API_KEY, CRITIC_MODEL_NAME
 """
@@ -117,16 +118,26 @@ tools = [
 critic = None
 
 # --- P06: security profile --------------------------------------------------
-# TODO: point this at your kept org_security_policy.j2
-security_policy_filename = os.environ.get(
-    "HARNESS_SECURITY_POLICY",
-    str(
-        Path(__file__).parents[2]
-        / "p06-safety"
-        / "solution"
-        / "org_security_policy.j2"
-    ),
-)
+# TODO: point this at your kept org_security_policy.j2. DockerWorkspace only
+# mounts the target repo by default, so mount the policy directory separately.
+security_policy_host_path = Path(
+    os.environ.get(
+        "HARNESS_SECURITY_POLICY",
+        str(
+            Path(__file__).parents[2]
+            / "p06-safety"
+            / "solution"
+            / "org_security_policy.j2"
+        ),
+    )
+).expanduser().resolve()
+
+if not security_policy_host_path.exists():
+    print(f"Missing security policy: {security_policy_host_path}", file=sys.stderr)
+    raise SystemExit(2)
+
+security_policy_filename = f"/openhands-harness-policy/{security_policy_host_path.name}"
+security_policy_volume = f"{security_policy_host_path.parent}:/openhands-harness-policy:ro"
 
 security_analyzer = EnsembleSecurityAnalyzer(
     analyzers=[
@@ -152,6 +163,7 @@ def main(task: str) -> None:
         # lessons do not collide if both are running.
         host_port=int(os.environ.get("HARNESS_PORT", "8020")),
         mount_dir=str(resolve_host_working_dir()),
+        volumes=[security_policy_volume],
     ) as workspace:
         # P05: AGENTS.md is read automatically if it sits at the root of the
         # working directory mounted into the workspace. Make sure your kept

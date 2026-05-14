@@ -6,6 +6,7 @@ Run with:
 Required env vars:  LLM_API_KEY
 Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
                     LLM_MODEL_SMALL (default anthropic/claude-haiku-4-5-20251001)
+                    P02_PROMPT (override the default VITE_BACKEND_HOST prompt)
                     AGENT_SERVER (default http://127.0.0.1:18000)
                     WORKSPACE_DIR (default current directory)
 """
@@ -28,7 +29,7 @@ from _runtime import (
     token_counts,
 )
 
-PROMPT = (
+DEFAULT_PROMPT = (
     "Find every place VITE_BACKEND_HOST is read or set, "
     "and write a short note explaining how the dev script picks the backend."
 )
@@ -54,7 +55,7 @@ def require_env(name: str) -> str:
     return value
 
 
-def run_config(label: str, llm: LLM, server: str, working_dir: str) -> dict:
+def run_config(label: str, llm: LLM, server: str, working_dir: str, prompt: str) -> dict:
     """Run the prompt with the given LLM and return metrics."""
     agent = get_default_agent(llm=llm, cli_mode=True)
     workspace = Workspace(
@@ -67,7 +68,7 @@ def run_config(label: str, llm: LLM, server: str, working_dir: str) -> dict:
 
     try:
         t0 = time.time()
-        conversation.send_message(PROMPT)
+        conversation.send_message(prompt)
         conversation.run()
         wall = time.time() - t0
 
@@ -99,6 +100,7 @@ def main() -> None:
     model_small = os.environ.get("LLM_MODEL_SMALL", DEFAULT_SMALL_MODEL)
     server = os.environ.get("AGENT_SERVER", "http://127.0.0.1:18000")
     working_dir = resolve_working_dir()
+    prompt = os.environ.get("P02_PROMPT", DEFAULT_PROMPT)
 
     # --- Config A: flagship ---
     flagship_llm = LLM(
@@ -118,18 +120,20 @@ def main() -> None:
     # RouterLLM instances do not currently survive RemoteConversation
     # serialization in SDK 1.22.x. Keep routing outside the remote boundary:
     # classify the task, then build the agent with the selected concrete LLM.
-    route, routed_llm = choose_llm_for_prompt(PROMPT, flagship_llm, small_llm)
+    route, routed_llm = choose_llm_for_prompt(prompt, flagship_llm, small_llm)
 
     results = []
 
+    print(f"\nprompt: {prompt}")
+
     print("\n--- Config A: flagship ---")
-    results.append(run_config("flagship", flagship_llm, server, working_dir))
+    results.append(run_config("flagship", flagship_llm, server, working_dir, prompt))
 
     print("\n--- Config B: small ---")
-    results.append(run_config("small", small_llm, server, working_dir))
+    results.append(run_config("small", small_llm, server, working_dir, prompt))
 
     print(f"\n--- Config C: routed -> {route} ---")
-    results.append(run_config(f"routed->{route}", routed_llm, server, working_dir))
+    results.append(run_config(f"routed->{route}", routed_llm, server, working_dir, prompt))
 
     print("\n" + "=" * 70)
     print(f"{'Config':<12} {'Events':>7} {'Wall':>8} {'Cost':>10} {'Tokens in':>12} {'Tokens out':>12}")

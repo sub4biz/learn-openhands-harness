@@ -41,9 +41,8 @@ fi
 : "${AGENT_WORKSPACE_SERVER_ROOT:=/projects}"
 : "${AGENT_CANVAS_DIR:=/Users/${USER}/Code/agent-canvas}"
 
-# Container-visible equivalents (used by the P01-P03 starters that don't import _runtime.py).
+# Container-visible equivalents for the agent-canvas Docker server.
 canvas_server_path="${AGENT_WORKSPACE_SERVER_ROOT}/$(basename "$AGENT_CANVAS_DIR")"
-self_server_path="${AGENT_WORKSPACE_SERVER_ROOT}/$(basename "$REPO_ROOT")"
 
 export AGENT_WORKSPACE_HOST_ROOT AGENT_WORKSPACE_SERVER_ROOT
 
@@ -74,34 +73,6 @@ set -- "${new_args[@]:-}"
 project="${1:-help}"
 shift || true
 
-# Helper: run a starter/solution that uses the OLD host-path check (P01-P03)
-# by monkey-patching resolve_working_dir from a tiny driver.
-run_legacy() {
-  local script_dir="$1" workspace="$2"
-  shift 2
-  WORKSPACE_DIR="$workspace" "${UV[@]}" python - "$@" <<PY
-import sys, runpy
-sys.path.insert(0, "$script_dir")
-mod = runpy.run_path("$script_dir/$(basename "$script_dir" | sed 's/.*/run/')_baseline.py", run_name="__main__") \
-  if False else None
-PY
-}
-
-# Helper: load a script and run main() with resolve_working_dir overridden.
-run_legacy_main() {
-  local script_path="$1" container_workspace="$2"
-  WORKSPACE_DIR="$container_workspace" "${UV[@]}" python - "$container_workspace" <<PY
-import sys, runpy, importlib.util
-script = "$script_path"
-spec = importlib.util.spec_from_file_location("_grader", script)
-mod = importlib.util.module_from_spec(spec)
-sys.modules["_grader"] = mod
-spec.loader.exec_module(mod)
-mod.resolve_working_dir = lambda: "$container_workspace"
-mod.main()
-PY
-}
-
 case "$project" in
   help|"")
     usage; exit 0 ;;
@@ -131,15 +102,18 @@ PY
     ;;
 
   p01)
-    run_legacy_main "projects/p01-agent-trace/${variant}/run_baseline.py" "$canvas_server_path"
+    WORKSPACE_DIR="$canvas_server_path" "${UV[@]}" \
+      python "projects/p01-agent-trace/${variant}/run_baseline.py"
     ;;
 
   p02)
-    run_legacy_main "projects/p02-model-routing/${variant}/run_routing.py" "$canvas_server_path"
+    WORKSPACE_DIR="$canvas_server_path" "${UV[@]}" \
+      python "projects/p02-model-routing/${variant}/run_routing.py"
     ;;
 
   p03)
-    run_legacy_main "projects/p03-retrieval/${variant}/run_retrieval.py" "$canvas_server_path"
+    WORKSPACE_DIR="$canvas_server_path" "${UV[@]}" \
+      python "projects/p03-retrieval/${variant}/run_retrieval.py" "$@"
     ;;
 
   p04)

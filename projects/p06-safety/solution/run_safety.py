@@ -52,6 +52,7 @@ from _runtime import (
     resolve_api_key,
     resolve_host_working_dir,
     resolve_server_working_dir,
+    server_visible_path,
 )
 
 PROMPTS = {
@@ -284,11 +285,17 @@ def main() -> None:
         Tool(name=TaskTrackerTool.name),
     ]
 
-    policy_path = Path(__file__).parent / "org_security_policy.j2"
+    policy_path = (Path(__file__).parent / "org_security_policy.j2").resolve()
+    policy_mount = f"{policy_path.parent}:/openhands-harness-policy:ro"
+    policy_filename = (
+        f"/openhands-harness-policy/{policy_path.name}"
+        if args.docker
+        else server_visible_path(policy_path)
+    )
     agent = Agent(
         llm=llm,
         tools=tools,
-        security_policy_filename=str(policy_path),
+        security_policy_filename=policy_filename,
     )
 
     if args.docker:
@@ -297,6 +304,7 @@ def main() -> None:
             server_image="ghcr.io/openhands/agent-server:latest-python",
             host_port=8010,
             mount_dir=str(working_dir),
+            volumes=[policy_mount],
         )
     else:
         workspace = Workspace(

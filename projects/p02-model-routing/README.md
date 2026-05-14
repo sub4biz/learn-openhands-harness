@@ -38,6 +38,15 @@
 2. Fork from start (or re-create) and run config B. Same metrics.
 3. Run config C. Same metrics. Note which model the policy selected and whether that matches your intent.
 
+The default `VITE_BACKEND_HOST` prompt is text-only, so the shipped policy should
+select the small model. To prove the flagship branch exists, rerun with a prompt
+that contains one of the flagship markers:
+
+```bash
+P02_PROMPT="Review the security model and propose architecture changes." \
+uv run --with openhands-sdk --with openhands-tools python run_routing.py
+```
+
 ## What to write down
 
 | Config | Turns | In tokens | Out tokens | Cost | Correct? | Where the cost landed |
@@ -51,7 +60,7 @@
 - Turn-count differences across A and B are usually about *retrieval discipline* (does the model grep enough before guessing?), not raw intelligence. If the cheaper model uses fewer turns and gets the same answer, it's not because it's smarter, because the task didn't need the extra capability.
 - Config C is the interesting one. If it lands within 10% of A's correctness at 30% of A's cost, you have evidence that *most of your task doesn't need the flagship*. If C drops sharply on correctness, your routing policy is sending the wrong task type to the small model. Fix the policy, not the models.
 
-> Connection to the talk: slide 11 (same model, 2× gap from harness) and slide 22's framing of the model as *one of five levers, not the dominant one*.
+> Connection to the [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials): the same model can perform very differently under different harnesses, and model choice is only one lever among routing, tools, memory, verification, and runtime boundaries.
 
 ### Supporting note: tool surface and schema
 

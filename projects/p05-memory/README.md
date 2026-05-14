@@ -57,7 +57,7 @@ uv run python compare_traces.py \
 ## What to look for
 
 - Useful `AGENTS.md` reduces re-discovery turns. Useless `AGENTS.md` (verbose, generic) just adds tokens to every prompt.
-- This is the talk's slide-58/59 result, replicated on your repo. Worth doing yourself once.
+- This mirrors the [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials) theme that useful repo memory reduces re-discovery work. Worth replicating on your own repo once.
 - `compare_traces.py` reports event deltas, token deltas, and a likely
   re-discovery proxy. Treat the proxy as a starting point, then inspect the raw
   trace before claiming why the run improved.

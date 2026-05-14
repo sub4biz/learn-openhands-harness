@@ -85,7 +85,9 @@ uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
 ```
 
 Set `WORKSPACE_DIR=/path/to/repo` to run the safety prompts against a specific
-repo. The Docker solution mounts that path into the sandbox.
+repo. The Docker solution mounts that path into the sandbox and mounts the
+policy template read-only at `/openhands-harness-policy/` so the server can
+load it from inside the container.
 
 The solution preflights `docker info` before constructing `DockerWorkspace`.
 If Docker is not installed or the daemon is not running, it exits with a short

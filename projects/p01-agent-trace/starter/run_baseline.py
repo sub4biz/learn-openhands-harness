@@ -63,7 +63,9 @@ def main() -> None:
 
         # TODO: inspect conversation.state.events to build a structured trace
         # summary. Count tool calls by type, list files read, check whether
-        # compaction fired. The solution shows one way to do this.
+        # compaction fired. In SDK 1.22.x tool events expose tool_name and
+        # tool_call.arguments; older builds used tool and tool_input. The
+        # solution shows one way to handle both shapes.
 
         print(f"events: {len(conversation.state.events)}")
         print(f"cost  : {conversation.conversation_stats.get_combined_metrics().accumulated_cost}")

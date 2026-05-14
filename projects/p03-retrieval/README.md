@@ -5,7 +5,7 @@
 | **What You Do** | Run the prompt with `terminal + file_editor` only, then with an MCP code-search server attached. Measure when the extra retrieval tool earns its slot vs when it just adds turns. |
 | **Harness Mechanism** | Lexical baseline (`grep` / file reads / `find`) vs. lexical + [MCP](https://docs.openhands.dev/sdk/guides/mcp) `search_code` |
 
-**Phase: STOP HALLUCINATED PATHS.** Coding agents default to `grep`. The talk's stance (slides 25–31): semantic only earns its slot when you have a vocabulary mismatch.
+**Phase: STOP HALLUCINATED PATHS.** Coding agents default to `grep`. The [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials) frame the retrieval decision around vocabulary mismatch: semantic search only earns its slot when lexical search cannot bridge the gap.
 
 ## Directory guide
 
@@ -59,7 +59,7 @@ That command should print `MCP` as `1` or more.
 - Switch the prompt to something with a synonym gap (`"how does the canvas pick which backend to talk to"`). A strong flagship may still recover by grepping adjacent terms like `backend` and `proxy`; that is useful data, not a failure of the lesson.
 - MCP earns its slot only when `search_code` reduces misses or avoids expensive wandering. If the MCP-call column is zero, the model did not need or choose the tool. This server is intentionally small: BM25-style scoring plus a few synonym expansions, not an embeddings service.
 
-> Connection to the talk: slide 27 (BM25 makes grep instant) and slides 29-31 (when embeddings earn their keep). Don't take this on faith. Measure on *your* repo.
+> Connection to the [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials): fast lexical search is the baseline, and embeddings earn their keep only when they reduce misses or expensive wandering. Don't take this on faith. Measure on *your* repo.
 
 In one live run on `agent-canvas`, lexical exact took 46 events / 91.5s / $0.25, while lexical synonym took 42 events / 58.8s / $0.17. That result supports the default rule: strong models often bridge small vocabulary gaps without extra retrieval infrastructure.
 
