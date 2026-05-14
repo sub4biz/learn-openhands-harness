@@ -34,6 +34,9 @@ The examples default to `anthropic/claude-sonnet-4-5-20250929` (Sonnet 4.5).
 Override `LLM_MODEL` only if you want a different LiteLLM provider/model string.
 Keep real keys in `.env`, not in prompts, docs, or commits.
 
+Docker is not required for this dockerless quickstart, but it is required
+starting in P06 when the tutorial moves into sandboxed workspaces.
+
 The canvas dev script will install Python dependencies into uvx-managed envs on first run. You don't manage those envs yourself.
 
 ---
@@ -83,13 +86,20 @@ Before you trust the canvas, hit the agent server's HTTP API directly. This is t
 
 ```bash
 # Health check: no auth needed by default
-curl -s http://127.0.0.1:18000/health | jq .
+if command -v jq >/dev/null 2>&1; then
+  curl -fsS http://127.0.0.1:18000/health | jq .
+else
+  curl -fsS http://127.0.0.1:18000/health
+fi
 
 # Expected response (shape may evolve):
 # {
 #   "status": "ok"
 # }
 ```
+
+You can also run `scripts/health.sh`, which uses the same fallback when `jq`
+is not installed.
 
 If you get a connection refused, the server isn't up yet. Wait, then try again. `/health`, `/ready`, and `/server_info` are public server-detail endpoints. Most `/api/*` routes are authenticated because the dev script generates or reuses a session key. For direct API calls, send `X-Session-API-Key` with the value from `~/.openhands/agent-canvas/session-api-key.txt`, or export `SESSION_API_KEY` / `VITE_SESSION_API_KEY` yourself before starting the stack.
 
@@ -115,7 +125,7 @@ One subtle but important distinction: `/server_info` lists every tool the server
 In the browser:
 
 1. Open `http://localhost:8000`.
-2. Create a new conversation. If this is your first run, set the provider API key and model in the canvas LLM settings first.
+2. Create a new conversation. If this is your first run, set the provider API key and model in the canvas LLM settings first: open **Settings → LLM** in the sidebar, or go directly to `http://localhost:8000/settings`.
 3. Type something narrow and verifiable. A good first prompt is:
 
    > Read the current repo and write three facts about it into `FACTS.txt`.
@@ -132,70 +142,18 @@ If `FACTS.txt` shows up in the workspace directory the canvas chose, usually und
 
 The canvas is one client. The Python SDK is another. Running the same task through both, against the same server, makes it obvious that the *harness* is the server, not either client.
 
-Use the checked-in helper at [`scripts/quickstart.py`](./scripts/quickstart.py), or save this equivalent code as `quickstart.py`:
-
-```python
-import os
-from pathlib import Path
-from pydantic import SecretStr
-from openhands.sdk import LLM, Conversation, RemoteConversation, Workspace
-from openhands.tools.preset.default import get_default_agent
-
-DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
-session_key_path = Path.home() / ".openhands" / "agent-canvas" / "session-api-key.txt"
-agent_server_api_key = os.getenv("AGENT_SERVER_API_KEY") or (
-    session_key_path.read_text().strip() if session_key_path.exists() else None
-)
-
-llm = LLM(
-    usage_id="agent",
-    model=os.getenv("LLM_MODEL", DEFAULT_MODEL),
-    api_key=SecretStr(os.environ["LLM_API_KEY"]),
-)
-agent = get_default_agent(llm=llm, cli_mode=True)
-
-# The canvas already started this server on :18000.
-workspace = Workspace(
-    host="http://127.0.0.1:18000",
-    api_key=agent_server_api_key,
-    # Use a host path in dockerless mode; use /projects/... when the server is Dockerized.
-    working_dir=os.getenv("WORKSPACE_DIR", os.getcwd()),
-)
-conversation = Conversation(agent=agent, workspace=workspace)
-assert isinstance(conversation, RemoteConversation)
-
-conversation.send_message("Write 3 facts about this project into FACTS.txt.")
-conversation.run()
-
-print("events:", len(conversation.state.events))
-print("cost  :", conversation.conversation_stats.get_combined_metrics().accumulated_cost)
-conversation.close()
-```
-
-Run it:
+Use the checked-in helper at [`scripts/quickstart.py`](./scripts/quickstart.py).
+That file is the source of truth for the SDK version of this quickstart; inspect
+it if you want to see the `LLM`, `Workspace`, `Conversation`, and
+`get_default_agent()` wiring.
 
 ```bash
 uv run --with openhands-sdk --with openhands-tools python scripts/quickstart.py
 ```
 
 Set `WORKSPACE_DIR=/path/to/repo` if you want the SDK run to inspect a repo other
-than the current directory. In dockerless mode, make that repo disposable or
-easy to restore. For real work, switch to Docker first.
-
-If your agent server is Dockerized and the repo lives at
-`/path/to/your/projects/agent-canvas` on the host, either set:
-
-```bash
-export AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects
-export AGENT_WORKSPACE_SERVER_ROOT=/projects
-export WORKSPACE_DIR=/path/to/your/projects/agent-canvas
-```
-
-or pass the server-visible path directly:
-
-```bash
-export WORKSPACE_DIR=/projects/agent-canvas
-```
+than the current directory. If your agent server is Dockerized, use the
+host/server path mapping from §1.2.
 
 If this exits with `Missing required environment variable: LLM_API_KEY`, the server is fine; the SDK client just doesn't have model credentials in your shell. Source `.env`, export `LLM_API_KEY`, or use the canvas LLM settings path from §1.4.
 
