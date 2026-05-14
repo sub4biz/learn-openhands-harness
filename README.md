@@ -12,9 +12,9 @@ By the end you'll have a `harness.py` you built yourself, with model routing, re
 
 ## Why an open harness
 
-There are good harnesses you can't see (Claude Code, Codex CLI, Cursor) and good ones you can (SWE-agent, OpenHands, deepagents). For learning, only the open ones work. You need to read the code to understand what a harness *is*.
+There are good harnesses you can't see (Claude Code, Cursor) and good ones you can (SWE-agent, OpenHands, deepagents). For learning, only the open ones work. You need to read the code to understand what a harness *is*.
 
-OpenHands is a useful study target for three reasons:
+OpenHands is a useful learning framing for three reasons:
 
 1. **Clean client/server split.** The agent server is a stateless-ish HTTP API; the canvas is a thin client. The harness boundary is literally an OpenAPI spec. You can replace either side without rewriting the other.
 2. **Three deployment shapes from one codebase.** Local process, Docker sandbox, hosted API, all by swapping a `Workspace` class. That makes the cost of *where work runs* visible.
@@ -38,8 +38,6 @@ The most important habit is separating constants from variables. A model
 router, security profile, default tool list, memory policy, and sandbox belong
 in `harness.py` only after repeated runs show they should be stable defaults.
 Task prompt, repo path, budget, and one-off exceptions stay outside the harness.
-If you find yourself editing `harness.py` for every task, you still have a
-prototype, not a harness you can trust.
 
 | Project | What you change | What you keep |
 |---|---|---|
