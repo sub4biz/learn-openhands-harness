@@ -68,6 +68,17 @@ Each project README has:
 
 Use a fresh conversation per run. Save agent traces.
 
+## Agent-assisted path
+
+These projects are designed to work with OpenHands as your coding assistant, not
+just as something you run after writing the answer yourself:
+
+1. Open the project `README.md` and `starter/` directory only.
+2. Ask the agent to complete the TODOs without reading `solution/`.
+3. Require it to run the smoke check or live command listed in the README.
+4. Compare against `solution/` only after the starter works, then write down
+   what differed.
+
 ---
 
 ## Running the scripts

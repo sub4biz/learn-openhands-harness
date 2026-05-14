@@ -14,6 +14,13 @@
 | `starter/` | `run_safety.py`. runs with local workspace, no security analyzer. Plus `org_security_policy.j2`. a template with TODO placeholders. |
 | `solution/` | `run_safety.py` wires deterministic analyzers + `LLMSecurityAnalyzer` + `ConfirmRisky()` + `DockerWorkspace`. It also has `--classify-dry` and terminal confirmation handling. Plus `org_security_policy.j2`, a completed policy. |
 
+## Agent-assisted path
+
+1. Open this `README.md` and `starter/` only.
+2. Ask your coding agent to complete the TODOs without reading `solution/`.
+3. Require it to run the smoke check or live command below and report the result.
+4. Compare against `solution/` only after your starter works, then note what differed.
+
 ## P06a: Security policy + confirmation
 
 For a company, "allowed versus not allowed" should be a shared harness artifact, not a private convention each engineer carries in their head. OpenHands gives you three layers:

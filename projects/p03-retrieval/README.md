@@ -15,6 +15,13 @@
 | `starter/` | `run_retrieval.py`. Runs the default lexical tool set and includes the helper that builds the MCP config. |
 | `solution/` | `run_retrieval.py`. Runs lexical-only and lexical+MCP configs and compares event/cost/MCP-call counts. Plus `mcp_decision_rule.md`, the one-line decision rule to keep. |
 
+## Agent-assisted path
+
+1. Open this `README.md` and `starter/` only.
+2. Ask your coding agent to complete the TODOs without reading `solution/`.
+3. Require it to run the smoke check or live command below and report the result.
+4. Compare against `solution/` only after your starter works, then note what differed.
+
 ## Setup
 
 - Same model (from P02), same baseline tool list. Hold them constant.

@@ -14,6 +14,13 @@
 | `starter/` | `run_routing.py`. runs a single flagship model with TODOs for adding a small model and a routing policy. |
 | `solution/` | `run_routing.py`. all three configs (flagship, small, routed) with per-config metrics printed side by side. |
 
+## Agent-assisted path
+
+1. Open this `README.md` and `starter/` only.
+2. Ask your coding agent to complete the TODOs without reading `solution/`.
+3. Require it to run the smoke check or live command below and report the result.
+4. Compare against `solution/` only after your starter works, then note what differed.
+
 ## Setup
 
 - Same agent server, same canvas, same workspace.

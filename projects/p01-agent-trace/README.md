@@ -14,6 +14,13 @@
 | `starter/` | `run_baseline.py`. runs the prompt and prints raw event count + cost. The minimum viable SDK run. |
 | `solution/` | `run_baseline.py`. same script, extended to print a structured trace summary. Plus `trace_checklist.md`. the trace-reading checklist to keep. |
 
+## Agent-assisted path
+
+1. Open this `README.md` and `starter/` only.
+2. Ask your coding agent to complete the TODOs without reading `solution/`.
+3. Require it to run the smoke check or live command below and report the result.
+4. Compare against `solution/` only after your starter works, then note what differed.
+
 ## Setup
 
 - Same repo and same prompt for the rest of the projects.

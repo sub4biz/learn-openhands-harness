@@ -16,6 +16,13 @@ The inspiration is the Harvey LAB / "Trust Your Harness" pattern: hold the model
 | `starter/` | `run_decomposition.py`. runs the monolithic task and leaves TODOs for the decomposed workflow. |
 | `solution/` | `run_decomposition.py` runs monolithic and decomposed workflows on copied workspaces. `score_report.py` scores saved reports. `decomposition_plan.md` and `evaluation_rubric.md` are the artifacts to keep. |
 
+## Agent-assisted path
+
+1. Open this `README.md` and `starter/` only.
+2. Ask your coding agent to complete the TODOs without reading `solution/`.
+3. Require it to run the smoke check or live command below and report the result.
+4. Compare against `solution/` only after your starter works, then note what differed.
+
 ## Setup
 
 - Same model and retrieval policy from P01-P03.

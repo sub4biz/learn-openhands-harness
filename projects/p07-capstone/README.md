@@ -14,6 +14,13 @@
 | `starter/` | `evaluate.py` scaffolds the repeated-run critic experiment. `harness.py` is the capstone skeleton with TODO placeholders for every kept artifact from P01-P06. |
 | `solution/` | `evaluate.py` runs no-critic vs. critic trials and scores them. `harness.py` wires routing, tools, security policy, Docker sandbox, and an optional API critic. |
 
+## Agent-assisted path
+
+1. Open this `README.md` and `starter/` only.
+2. Ask your coding agent to complete the TODOs without reading `solution/`.
+3. Require it to run the smoke check or live command below and report the result.
+4. Compare against `solution/` only after your starter works, then note what differed.
+
 ---
 
 ## P07a: Critic with iterative refinement

@@ -14,6 +14,13 @@
 | `starter/` | `run_memory.py`. runs against a repo with no `AGENTS.md` and no condenser config. TODOs for adding memory. |
 | `solution/` | `run_memory.py` runs both configs and saves trace JSON. `compare_traces.py` compares saved traces. `AGENTS.md` is a sample for agent-canvas, and `condenser_notes.md` is the policy note to keep. |
 
+## Agent-assisted path
+
+1. Open this `README.md` and `starter/` only.
+2. Ask your coding agent to complete the TODOs without reading `solution/`.
+3. Require it to run the smoke check or live command below and report the result.
+4. Compare against `solution/` only after your starter works, then note what differed.
+
 ## Setup
 
 - Same model + tools + retrieval policy from P01-P04.
