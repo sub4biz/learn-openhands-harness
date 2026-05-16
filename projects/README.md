@@ -12,6 +12,33 @@ The pattern is behavior first: decide what agent behavior you want, change the s
 
 ---
 
+## Lab rhythm: Canvas first, scripts second
+
+Agent Canvas is the teaching surface. Use it to watch the trace: prompts, tool
+calls, observations, confirmations, compaction, and final answers. Start in the
+GUI whenever a project introduces a new harness concept.
+
+The SDK scripts are the measurement surface. Use them after you understand the
+trace behavior and need to repeat the same task, compare configs, save traces,
+or tabulate events, tokens, cost, and correctness.
+
+Do not run every script up front. For each project, first understand the harness
+lever, then run the smallest experiment that tests it.
+
+Before every live run, pause and predict:
+
+- What harness lever changes in this project?
+- What should the trace look like if the harness is working?
+- What metric would prove the change helped?
+- What failure mode would prove it did not?
+
+Use scratch clones for experiments where prior generated notes could pollute
+retrieval. If an earlier run wrote files like `FACTS.txt` or
+`VITE_BACKEND_HOST_NOTES.md`, either remove them from the target workspace or
+copy a clean repo before measuring.
+
+---
+
 ## Project evolution
 
 ```text
@@ -74,9 +101,12 @@ These projects are designed to work with OpenHands as your coding assistant, not
 just as something you run after writing the answer yourself:
 
 1. Open the project `README.md` and `starter/` directory only.
-2. Ask the agent to complete the TODOs without reading `solution/`.
-3. Require it to run the smoke check or live command listed in the README.
-4. Compare against `solution/` only after the starter works, then write down
+2. Ask the agent to explain the harness lever and the expected trace before it
+   edits or runs anything.
+3. Ask the agent to complete the TODOs without reading `solution/`.
+4. Require it to run the smallest smoke check or live command listed in the
+   README, and only after you approve that run.
+5. Compare against `solution/` only after the starter works, then write down
    what differed.
 
 ---

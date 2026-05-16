@@ -23,6 +23,15 @@ The inspiration is the Harvey LAB / "Trust Your Harness" pattern: hold the model
 3. Require it to run the smoke check or live command below and report the result.
 4. Compare against `solution/` only after your starter works, then note what differed.
 
+## Before you run
+
+Pause and predict:
+
+- Which parts of the release-readiness task are independent enough to split?
+- What rubric categories might the monolithic run miss?
+- How much extra cost or wall time would decomposition need to justify itself?
+- What aggregation failure would make the decomposed run worse?
+
 ## Setup
 
 - Same model and retrieval policy from P01-P03.

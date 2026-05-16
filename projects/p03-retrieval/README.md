@@ -22,6 +22,15 @@
 3. Require it to run the smoke check or live command below and report the result.
 4. Compare against `solution/` only after your starter works, then note what differed.
 
+## Before you run
+
+Pause and predict:
+
+- Should exact-symbol search for `VITE_BACKEND_HOST` need MCP at all?
+- What synonym prompt might expose a vocabulary mismatch?
+- What trace evidence would show `search_code` earned its slot?
+- If `search_code` is available but used zero times, what does that tell you?
+
 ## Setup
 
 - Same model (from P02), same baseline tool list. Hold them constant.

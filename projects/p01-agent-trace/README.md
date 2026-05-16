@@ -21,6 +21,15 @@
 3. Require it to run the smoke check or live command below and report the result.
 4. Compare against `solution/` only after your starter works, then note what differed.
 
+## Before you run
+
+Pause and predict:
+
+- Which tools do you expect to see in the trace: `terminal`, `file_editor`, or both?
+- What should the first useful retrieval step be for `VITE_BACKEND_HOST`?
+- Will the note be written by a file-editor action or by a terminal command/script?
+- What would make the final answer ungrounded?
+
 ## Setup
 
 - Same repo and same prompt for the rest of the projects.

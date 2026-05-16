@@ -21,6 +21,15 @@
 3. Require it to run the smoke check or live command below and report the result.
 4. Compare against `solution/` only after your starter works, then note what differed.
 
+## Before you run
+
+Pause and predict:
+
+- Which model should the router choose for the default `VITE_BACKEND_HOST` prompt?
+- What prompt words should force the flagship branch?
+- What cost reduction would make the routed config worth keeping?
+- What trace or correctness failure would prove the router is too aggressive?
+
 ## Setup
 
 - Same agent server, same canvas, same workspace.

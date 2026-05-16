@@ -10,6 +10,39 @@ By the end you'll have a `harness.py` you built yourself, with model routing, re
 
 ---
 
+## How to use this tutorial
+
+Use this as a guided lab, not an autonomous agent task. The goal is to learn
+which harness lever changed and how that change shows up in the trace. Do not
+ask an agent to run the whole tutorial end-to-end.
+
+For each phase:
+
+1. Read the project overview.
+2. Inspect the starter code.
+3. Predict what the harness should do.
+4. Run one small experiment.
+5. Inspect the Agent Canvas trace.
+6. Record the takeaway before moving on.
+
+Start live runs in Agent Canvas when learning a new concept. The Canvas trace is
+the teaching surface: prompts, tool calls, observations, confirmations,
+compaction, and final answers are visible in order. Use the SDK scripts after
+the trace behavior is clear and you need repeatable measurements such as events,
+tokens, cost, pass rate, or saved trace JSON.
+
+If you use an AI coding agent to help with this tutorial, give it this
+instruction first:
+
+```text
+You are helping me through this as a guided lab. Do not run ahead. For each
+section, explain the concept, inspect the starter, ask me to predict the result,
+then wait for me before running live commands. Prefer Agent Canvas for first
+trace inspection and scripts for repeatable measurement.
+```
+
+---
+
 ## Why an open harness
 
 There are good harnesses you can't see (Claude Code, Cursor) and good ones you can (SWE-agent, OpenHands, deepagents). For learning, only the open ones work. You need to read the code to understand what a harness *is*.

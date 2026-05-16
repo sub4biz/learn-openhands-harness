@@ -21,6 +21,15 @@
 3. Require it to run the smoke check or live command below and report the result.
 4. Compare against `solution/` only after your starter works, then note what differed.
 
+## Before you run
+
+Pause and predict:
+
+- Which actions should be LOW, MEDIUM, and HIGH for your organization?
+- Which prompts should run without confirmation, and which should pause?
+- What should happen to package installs, network access, deletes, and secrets?
+- What changes when the same prompt runs inside `DockerWorkspace`?
+
 ## P06a: Security policy + confirmation
 
 For a company, "allowed versus not allowed" should be a shared harness artifact, not a private convention each engineer carries in their head. OpenHands gives you three layers:

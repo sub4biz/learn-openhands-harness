@@ -21,6 +21,15 @@
 3. Require it to run the smoke check or live command below and report the result.
 4. Compare against `solution/` only after your starter works, then note what differed.
 
+## Before you run
+
+Pause and predict:
+
+- What pass-rate lift would justify adding a critic?
+- What cost-per-pass would make the critic a bad tradeoff?
+- Which P01-P06 decisions are stable harness constants, and which are per-task variables?
+- What evidence would make you comfortable running the final `harness.py` on a fresh repo?
+
 ---
 
 ## P07a: Critic with iterative refinement

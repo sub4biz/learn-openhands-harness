@@ -21,6 +21,15 @@
 3. Require it to run the smoke check or live command below and report the result.
 4. Compare against `solution/` only after your starter works, then note what differed.
 
+## Before you run
+
+Pause and predict:
+
+- What repo facts should a minimal `AGENTS.md` contain?
+- Which discovery steps should disappear when that memory is present?
+- What token or event reduction would make the memory worth keeping?
+- What would indicate the memory is generic noise instead of useful context?
+
 ## Setup
 
 - Same model + tools + retrieval policy from P01-P04.
