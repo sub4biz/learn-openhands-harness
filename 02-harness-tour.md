@@ -169,7 +169,7 @@ The [projects](./projects/) take each of these five parts and have you change it
 |---|---|---|
 | [P01: Agent Trace](./projects/p01-agent-trace/) | Nothing, you read the trace | How to diagnose what the harness did |
 | [P02: Model Routing](./projects/p02-model-routing/) | The model | Cost vs. capability tradeoffs |
-| [P03: Retrieval](./projects/p03-retrieval/) | The tools | When semantic search earns its slot |
+| [P03: Retrieval](./projects/p03-retrieval/) | The tools | When extra search earns its slot |
 | [P04: Task Decomposition](./projects/p04-decomposition/) | The workflow shape | When smaller calls beat one large call |
 | [P05: Memory](./projects/p05-memory/) | `AGENTS.md` and condensers | How prior knowledge changes behavior |
 | [P06: Safety](./projects/p06-safety/) | Security policy + Docker | Bounding what the agent can do |

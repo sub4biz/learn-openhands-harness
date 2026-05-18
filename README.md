@@ -76,7 +76,7 @@ Task prompt, repo path, budget, and one-off exceptions stay outside the harness.
 |---|---|---|
 | [P01: Agent Trace](./projects/p01-agent-trace/) | See the loop | Baseline trace + trace-reading checklist |
 | [P02: Model Routing](./projects/p02-model-routing/) | Right-size the thinking | Routing policy / LLMRegistry config |
-| [P03: Retrieval](./projects/p03-retrieval/) | Stop hallucinated paths | Grep-first MCP-on/off decision rule |
+| [P03: Retrieval](./projects/p03-retrieval/) | Get better results faster | Grep-first MCP-on/off decision rule |
 | [P04: Task Decomposition](./projects/p04-decomposition/) | Break down large work | Decomposition plan + aggregation rule |
 | [P05: Memory](./projects/p05-memory/) | Reduce re-discovery | AGENTS.md + condenser/memory policy notes |
 | [P06: Safety](./projects/p06-safety/) | Bound blast radius | Security profile + DockerWorkspace runner |

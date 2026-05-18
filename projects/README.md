@@ -52,7 +52,7 @@ PROJECT EVOLUTION (OpenHands harness)
   P02  Model routing                 → RIGHT-SIZE THE THINKING
        |                               keep: a routing policy / LLMRegistry config
        v
-  P03  Retrieval                     → STOP HALLUCINATED PATHS
+  P03  Retrieval                     → GET BETTER RESULTS FASTER
        |                               keep: a one-line decision rule
        |                                     for when MCP earns its slot
        v

@@ -5,7 +5,7 @@
 | **What You Do** | Run the prompt with `terminal + file_editor` only, then with an MCP code-search server attached. Measure when the extra retrieval tool earns its slot vs when it just adds turns. |
 | **Harness Mechanism** | Lexical baseline (`grep` / file reads / `find`) vs. lexical + [MCP](https://docs.openhands.dev/sdk/guides/mcp) `search_code` |
 
-**Phase: STOP HALLUCINATED PATHS.** Coding agents default to `grep`. The [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials) frame the retrieval decision around vocabulary mismatch: semantic search only earns its slot when lexical search cannot bridge the gap.
+**Phase: GET BETTER RESULTS FASTER.** Coding agents usually start with `grep`, file reads, and `find`. The [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials) frame retrieval as a speed/quality tradeoff: add semantic or MCP search only when traces show it finds better evidence, avoids misses, or shortens the path to the answer.
 
 ## Directory guide
 
@@ -73,7 +73,7 @@ That command should print `MCP` as `1` or more.
 
 - For a repo where the query and source share vocabulary (`VITE_BACKEND_HOST` is mentioned by exact name), `grep` wins on latency and accuracy. Semantic adds turns without adding answers.
 - Switch the prompt to something with a synonym gap (`"how does the canvas pick which backend to talk to"`). A strong flagship may still recover by grepping adjacent terms like `backend` and `proxy`; that is useful data, not a failure of the lesson.
-- MCP earns its slot only when `search_code` reduces misses or avoids expensive wandering. If the MCP-call column is zero, the model did not need or choose the tool. This server is intentionally small: BM25-style scoring plus a few synonym expansions, not an embeddings service.
+- MCP earns its slot only when `search_code` improves correctness, reduces misses, or avoids expensive wandering. If the MCP-call column is zero, the model did not need or choose the tool. This server is intentionally small: BM25-style scoring plus a few synonym expansions, not an embeddings service.
 
 > Connection to the [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials): fast lexical search is the baseline, and embeddings earn their keep only when they reduce misses or expensive wandering. Don't take this on faith. Measure on *your* repo.
 
@@ -81,6 +81,6 @@ In one live run on `agent-canvas`, lexical exact took 46 events / 91.5s / $0.25,
 
 ## What you keep
 
-A one-line decision rule. Something like *"Enable MCP semantic search only when at least 30% of recent prompts contain query terms that don't appear in source."* Or: *"Lexical only for this repo, synonym gap is rare."* Either is a useful artifact. See `solution/mcp_decision_rule.md`.
+A one-line decision rule. Something like *"Enable MCP search only when trace comparisons show it improves correctness or lowers events/wall-clock on vocabulary-mismatch prompts."* Or: *"Lexical only for this repo; synonym gaps are rare."* Either is a useful artifact. See `solution/mcp_decision_rule.md`.
 
 -> Next: [P04: Task Decomposition](../p04-decomposition/)
