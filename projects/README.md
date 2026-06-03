@@ -1,8 +1,8 @@
 # Projects: Learning Path
 
-Seven small projects, in order, each changing one harness lever and producing a config artifact that carries forward. By P07 you'll have a runnable `harness.py` and an agent-trace evaluation record that wires together everything you kept: your trace-reading checklist, model routing, retrieval decision, decomposition plan, memory policy, security profile, sandbox, and critic.
+Seven cumulative projects plus one advanced extension. P01-P07 each change one harness lever and produce a config artifact that carries forward. By P07 you'll have a runnable `harness.py` and an agent-trace evaluation record that wires together everything you kept: your trace-reading checklist, model routing, retrieval decision, decomposition plan, memory policy, security profile, sandbox, and critic. P08 then asks whether dynamic workflows can reduce orchestration code without hiding too much control inside the model.
 
-If you're using this as a first learning path, treat P01-P05 as the core concepts. P06-P07 are the advanced path where safety, verification, and composition start looking like production harness design.
+If you're using this as a first learning path, treat P01-P05 as the core concepts. P06-P07 are the advanced path where safety, verification, and composition start looking like production harness design. P08 is optional until you are comfortable reading traces from multi-step work.
 
 The pattern is behavior first: decide what agent behavior you want, change the smallest harness surface that could affect it, then observe whether the trace changed.
 
@@ -69,10 +69,15 @@ PROJECT EVOLUTION (OpenHands harness)
        |                                     + DockerWorkspace runner
        v
   P07  Verification + capstone       → STOP "LOOKS FINE"
-                                       keep: Critic + rubric + harness.py
+       |                               keep: Critic + rubric + harness.py
+       v
+  P08  Dynamic workflows             → REDUCE ORCHESTRATION CODE
+                                       keep: workflow skill
+                                             + decision rule
 
   Each project produces a concrete artifact.
-  P07 is where they merge into one runnable harness.
+  P07 is where the core artifacts merge into one runnable harness.
+  P08 is an advanced extension for model-authored workflow coordination.
 ```
 
 ---
@@ -231,6 +236,12 @@ Prompt: "Find every place VITE_BACKEND_HOST is read or set..."
 |---|---|---|---|---|
 | No critic | | | | |
 | Critic | | | | |
+
+## P08: Dynamic workflows
+| Config | Orchestration LOC | Review dimensions | Cost | Report useful? |
+|---|---:|---:|---:|---|
+| Fixed manual workflow | | | | |
+| Dynamic workflow | | | | |
 ```
 
 Three runs is barely a signal; ten is convincing; thirty is real. Pick a budget and stick to it.

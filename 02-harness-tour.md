@@ -125,7 +125,7 @@ Your agent ran as a single process on your laptop, with direct access to your fi
 
 Switching from local to Docker is a one-line change in your Python code: swap `Workspace(...)` for `DockerWorkspace(...)`. The agent code, tools, prompts, and trace stay identical. Where the work runs is separate from how it runs.
 
-There's also a "how many agents" axis. Your task ran as a single agent. For harder tasks you might want [sub-agent delegation](https://docs.openhands.dev/sdk/guides/agent-delegation) (spawn a child for a bounded subtask) or a [critic](https://docs.openhands.dev/sdk/guides/critic) (a second LLM that reviews the first agent's work). Default to single. Multi-agent adds coordination cost that has to earn itself. [P07](./projects/p07-capstone/) is where you optionally add a critic. For a full multi-agent pipeline (implement, test, review across different harnesses), see the [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo).
+There's also a "how many agents" axis. Your task ran as a single agent. For harder tasks you might want [sub-agent delegation](https://docs.openhands.dev/sdk/guides/agent-delegation) (spawn a child for a bounded subtask) or a [critic](https://docs.openhands.dev/sdk/guides/critic) (a second LLM that reviews the first agent's work). Default to single. Multi-agent adds coordination cost that has to earn itself. [P07](./projects/p07-capstone/) is where you optionally add a critic. [P08](./projects/p08-dynamic-workflows/) then looks at dynamic workflows: the harness registers the roles and guardrails, while the model writes the short-lived fan-out/fan-in orchestration. For a full multi-agent pipeline (implement, test, review across different harnesses), see the [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo).
 
 ---
 
@@ -163,7 +163,7 @@ Once you see the parts, the diagnostic question changes. When an agent fails, yo
 
 ## 2.9 What's next
 
-The [projects](./projects/) take each of these five parts and have you change it, measure the difference, and keep the configuration that works. By P07 you'll have a complete `harness.py` that wires together your model routing, tool selection, decomposition policy, memory policy, security profile, and sandbox.
+The [projects](./projects/) take each of these five parts and have you change it, measure the difference, and keep the configuration that works. By P07 you'll have a complete `harness.py` that wires together your model routing, tool selection, decomposition policy, memory policy, security profile, and sandbox. P08 is the optional extension for model-authored workflow coordination.
 
 | Project | What you change | What you learn |
 |---|---|---|
@@ -174,5 +174,6 @@ The [projects](./projects/) take each of these five parts and have you change it
 | [P05: Memory](./projects/p05-memory/) | `AGENTS.md` and condensers | How prior knowledge changes behavior |
 | [P06: Safety](./projects/p06-safety/) | Security policy + Docker | Bounding what the agent can do |
 | [P07: Capstone](./projects/p07-capstone/) | Everything, wired together | A production-shaped harness |
+| [P08: Dynamic Workflows](./projects/p08-dynamic-workflows/) | Workflow skill + sub-agent roles | When the model can own orchestration |
 
 For real-world tasks to throw at your harness beyond the tutorial prompt, the [OpenHands use cases overview](https://docs.openhands.dev/openhands/usage/use-cases/overview) covers migrations, test generation, documentation, and more.
