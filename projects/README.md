@@ -238,7 +238,7 @@ Prompt: "Find every place VITE_BACKEND_HOST is read or set..."
 | Critic | | | | |
 
 ## P08: Dynamic workflows
-| Config | Orchestration LOC | Review dimensions | Cost | Report useful? |
+| Config | Orchestration LOC | Research angles | Cost | Report useful? |
 |---|---:|---:|---:|---|
 | Fixed manual workflow | | | | |
 | Dynamic workflow | | | | |

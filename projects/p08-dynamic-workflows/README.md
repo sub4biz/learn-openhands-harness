@@ -2,111 +2,142 @@
 
 | | |
 |---|---|
-| **What You Do** | Compare hard-coded orchestration against a workflow-capable harness where the model chooses the review dimensions, writes the fan-out/fan-in workflow, and returns one synthesized report. |
+| **What You Do** | Start from a manual deep-research orchestrator, then replace the fixed Python loop with a workflow-capable harness where the model chooses angles, fans out research, verifies claims, and synthesizes the report. |
 | **Harness Mechanism** | Workflow tool + model-authored orchestration + skills that constrain when and how the model may coordinate sub-agents |
 
-**Phase: REDUCE ORCHESTRATION CODE.** P04 taught decomposition where your application code owns the sequence: docs check, setup check, safety check, aggregate. Dynamic workflows move more of that coordination into the model. You still own the harness contract: available tools, available sub-agent roles, safety limits, output schema, and evaluation. The model owns the short-lived workflow plan.
+**Phase: REDUCE ORCHESTRATION CODE.** P04 taught decomposition where your application code owns the sequence: docs check, setup check, safety check, aggregate. This lesson uses the deep-research example from [rajshah4/workflow-demos](https://github.com/rajshah4/workflow-demos): the old way is a hand-written loop over research angles, verification passes, and final synthesis; the new way gives the model a workflow tool and a skill so it can write the short-lived fan-out/fan-in plan itself.
 
-This is the larger pattern showing up across agent products. Claude Code's dynamic workflows let Claude break a large task into parallel subagents and coordinate the result. Cursor's skills and subagents push in the same direction: reusable procedure lives in model-readable files, and the agent decides when a skill or subagent fits the task. The OpenHands demo in [rajshah4/workflow-demos](https://github.com/rajshah4/workflow-demos) shows an open interpretation of the pattern using skills, registered sub-agents, and a workflow tool.
+The shift is not "give up control." You still own the harness contract: available sub-agent roles, tool surface, safety limits, max fan-out, artifact paths, and evaluation criteria. What moves out of application code is the brittle orchestration glue: choosing angles, deciding which independent work can run in parallel, and reducing the results.
 
 ## Directory guide
 
 | Directory | What's inside |
 |---|---|
-| `starter/` | `run_dynamic_workflow.py` runs the manual code-review workflow and leaves TODOs for the dynamic workflow skill and workflow-tool wiring. |
-| `solution/` | `run_dynamic_workflow.py` includes the manual comparison, an optional live workflow-tool path, `workflow_orchestrator_skill.md`, and `dynamic_workflow_decision_rule.md`. |
+| `starter/` | `run_dynamic_workflow.py` is the manual deep-research baseline. Python owns the angles, runs each research pass, runs each fact-check pass, and aggregates the report. |
+| `solution/` | `run_dynamic_workflow.py` is only the dynamic workflow build: it loads the workflow skill, registers `web_searcher`, `fact_checker`, and `synthesizer` sub-agents, creates the parent workflow agent, and sends one research objective. |
+
+## Read these first
+
+Before building the solution, skim the docs and examples that define the moving parts:
+
+- [OpenHands Agent Skills & Context](https://docs.openhands.dev/sdk/guides/skill): how reusable instructions enter the agent context.
+- [OpenHands Sub-Agent Delegation](https://docs.openhands.dev/sdk/guides/agent-delegation): the underlying fan-out/fan-in pattern and why sub-agents need bounded roles.
+- [workflow-demos deep research](https://github.com/rajshah4/workflow-demos): the open example this lesson adapts.
+- [Claude Code dynamic workflows](https://claude.com/blog/introducing-dynamic-workflows-in-claude-code): the product pattern behind model-authored orchestration.
+- [Cursor 2.4 skills and subagents](https://cursor.com/changelog/2-4): another example of moving procedural knowledge into model-readable skills.
 
 ## Agent-assisted path
 
 1. Open this `README.md` and `starter/` only.
-2. Ask your coding agent to explain the ownership boundary: what remains in harness code, what moves into the skill, and what the model decides at runtime.
-3. Ask it to complete the TODOs without reading `solution/`.
-4. Require it to run the dry-run smoke check. Only run the live dynamic workflow if your SDK install includes workflow support.
-5. Compare against `solution/` and write down what orchestration code disappeared, and what new guardrails became necessary.
+2. Ask your coding agent to explain the manual deep-research loop: fixed angles, research passes, verification passes, final synthesis.
+3. Ask it what should remain in harness code versus what can move into a skill.
+4. Ask it to build the solution without reading `solution/`.
+5. Require it to run the dry-run smoke check. Only run live dynamic mode if your SDK install includes workflow support.
+6. Compare against `solution/` and write down what orchestration code disappeared, and what guardrails had to be added.
 
 ## Before you run
 
 Pause and predict:
 
-- Which parts of a multi-expert review are stable enough to keep in code?
-- Which parts should the model choose dynamically from the target file?
-- What constraints must the skill include so "the model decides" does not mean "anything goes"?
-- What trace evidence would prove the workflow is doing useful coordination rather than hiding work?
-- How much extra cost would be acceptable if orchestration code gets simpler?
+- Which research angles are stable enough for a manual baseline?
+- Which angles should the model be allowed to choose from the question?
+- What claims need independent fact-checking because they go stale quickly?
+- What should the workflow summary expose so the run is debuggable?
+- How much additional cost is acceptable if the dynamic workflow improves coverage or removes repeated orchestration code?
 
 ## Setup
 
-The dry run uses only the Python standard library:
+The starter dry run uses only the Python standard library:
+
+```bash
+cd projects/p08-dynamic-workflows/starter
+uv run python run_dynamic_workflow.py --dry-run
+```
+
+The solution dry run shows the dynamic workflow setup without model calls:
 
 ```bash
 cd projects/p08-dynamic-workflows/solution
-uv run python run_dynamic_workflow.py --dry-run --mode both
+uv run python run_dynamic_workflow.py --dry-run
 ```
 
-The manual live comparison uses the same remote Agent Server path as P01-P05:
-
-```bash
-WORKSPACE_DIR=/path/to/repo \
-uv run --with openhands-sdk --with openhands-tools python run_dynamic_workflow.py --mode manual
-```
-
-The dynamic live path requires an OpenHands SDK build with `WorkflowToolSet`. At the time this lesson was added, the public demo pointed to OpenHands SDK PR #3426 for workflow support. If your installed SDK does not expose `openhands.tools.workflow`, the script exits with a clear message and the dry run still teaches the code-shape comparison.
-
-```bash
-WORKSPACE_DIR=/path/to/repo \
-uv run --with openhands-sdk --with openhands-tools python run_dynamic_workflow.py --mode dynamic
-```
-
-Default target file:
+Default research question:
 
 ```text
-projects/_runtime.py
+What is changing about AI coding assistants for software teams?
 ```
 
-Override it with `--target path/to/file.py`. Relative paths are resolved inside the copied workspace.
+Override it by passing a question:
+
+```bash
+uv run python run_dynamic_workflow.py --dry-run \
+  "How are coding agents changing release engineering?"
+```
+
+Live manual mode uses the same remote Agent Server path as P01-P05:
+
+```bash
+cd projects/p08-dynamic-workflows/starter
+WORKSPACE_DIR=/path/to/repo \
+uv run --with openhands-sdk --with openhands-tools \
+  python run_dynamic_workflow.py \
+  "How are coding agents changing release engineering?"
+```
+
+Live dynamic mode requires an OpenHands SDK build with `WorkflowToolSet`. At the time this lesson was added, the public demo pointed to OpenHands SDK PR #3426 for workflow support. If your installed SDK does not expose `openhands.tools.workflow`, the script exits with a clear message and the dry run still teaches the code-shape comparison.
+
+```bash
+cd projects/p08-dynamic-workflows/solution
+WORKSPACE_DIR=/path/to/repo \
+uv run --with openhands-sdk --with openhands-tools \
+  python run_dynamic_workflow.py \
+  "How are coding agents changing release engineering?"
+```
 
 ## The comparison
 
 Config A is the old way:
 
-1. Your Python code names the reviewers.
-2. Your Python code runs each reviewer prompt.
-3. Your Python code decides when aggregation happens.
-4. The model acts as a worker inside your fixed loop.
+1. Python names the research angles.
+2. Python sends one prompt per angle.
+3. Python sends one fact-check prompt per angle.
+4. Python decides when synthesis happens.
+5. The model acts as a worker inside your fixed loop.
 
 Config B is the dynamic workflow:
 
-1. Your Python code registers available roles and gives the parent agent the workflow tool.
-2. Your skill tells the model when workflows are appropriate, what limits apply, and what final artifacts must exist.
-3. The model writes the short-lived workflow: which review dimensions, how many sub-agents, what prompts, and how to reduce results.
+1. Python registers available roles: `web_searcher`, `fact_checker`, and `synthesizer`.
+2. A skill tells the model when workflows are appropriate, what limits apply, and what artifacts must exist.
+3. The model writes the short-lived workflow: which angles to research, which checks can run in parallel, and how to reduce results.
 4. The trace and final report show whether that autonomy earned itself.
 
-The point is not "dynamic is always better." The point is to move reusable policy into a skill, reduce repeated orchestration code, and then verify the result with the trace.
+## General advice
+
+- Keep hard guarantees in code: tool access, sandbox, max fan-out, artifact paths, and safety policy.
+- Put reusable procedure in the skill: when to fan out, how to verify, how to preserve uncertainty, and what final shape to write.
+- Start with the manual loop. If the same loop appears in three tasks, consider moving it into a workflow skill.
+- Require a workflow summary. Dynamic orchestration is only useful if you can inspect what the model decided.
+- Treat research claims as unstable by default. Ask fact-checkers to mark stale-risk claims rather than smoothing them into confident prose.
+- Keep deterministic or compliance-critical sequences in code. Dynamic workflows are for adaptive planning, not for replacing auditably fixed control flow.
 
 ## What to look for
 
-- Did the dynamic run choose review dimensions that match the actual target file?
-- Did it stay inside the skill limits: no edits, no network, bounded reviewers, line-specific findings?
-- Did the final report preserve uncertainty and per-reviewer evidence?
-- Did the trace expose the generated workflow and sub-agent calls clearly enough to debug?
+- Did the dynamic run choose research angles that fit the question better than the fixed list?
+- Did it stay inside the skill limits?
+- Did fact-checkers preserve uncertainty and stale-risk claims?
+- Did the final report cite sources or clearly mark tool limitations?
+- Did the workflow summary expose enough of the generated plan to debug?
 - Did orchestration code shrink, or did complexity move into an untestable prompt?
-- Would a fixed P04-style sequence have been easier to reason about?
 
 ## What you keep
 
 Two artifacts:
 
-- `workflow_orchestrator_skill.md`: the reusable skill that teaches the model when and how to coordinate a dynamic workflow.
+- `workflow_orchestrator_skill.md`: the reusable deep-research workflow skill.
 - `dynamic_workflow_decision_rule.md`: the rule for when dynamic workflows earn their complexity.
 
 Good default decision rule:
 
-> Use a dynamic workflow when the task has many independent angles, the exact angles depend on the target, parallel exploration is useful, and the harness can verify the output. Keep orchestration in code when the sequence is compliance-critical, tiny, or easier to test as deterministic control flow.
-
-## Further reading
-
-- [rajshah4/workflow-demos](https://github.com/rajshah4/workflow-demos), the OpenHands-oriented demo this lesson is based on.
-- [Claude Code: Introducing dynamic workflows](https://claude.com/blog/introducing-dynamic-workflows-in-claude-code), the product pattern this demo interprets.
-- [Cursor 2.4 changelog: Subagents, Skills, and Image Generation](https://cursor.com/changelog/2-4), showing the same shift toward model-selected skills and specialized subagents.
+> Use a dynamic workflow when the task has many independent research angles, the exact angles depend on the question, parallel exploration is useful, and the harness can verify or cite the output. Keep orchestration in code when the sequence is compliance-critical, tiny, or easier to test as deterministic control flow.
 
 -> End of advanced path. Use the decision rule to decide whether dynamic workflows belong in your own `harness.py`.

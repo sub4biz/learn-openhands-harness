@@ -10,7 +10,7 @@
 #   scripts/grade.sh p05                             no-memory vs AGENTS.md
 #   scripts/grade.sh p06 read|edit|network|delete    safety prompts
 #   scripts/grade.sh p07 "your task"                 capstone (needs Docker)
-#   scripts/grade.sh p08 manual|dynamic|both [target] dynamic workflow comparison
+#   scripts/grade.sh p08 manual|dynamic|both ["question"] dynamic workflow comparison
 #
 # Variant flag: append --starter to run the starter instead of the solution.
 #   scripts/grade.sh p02 --starter
@@ -151,10 +151,28 @@ PY
 
   p08)
     mode="${1:-manual}"
-    target="${2:-projects/_runtime.py}"
-    WORKSPACE_DIR="$REPO_ROOT" "${UV[@]}" \
-      python "projects/p08-dynamic-workflows/${variant}/run_dynamic_workflow.py" \
-        --mode "$mode" --target "$target"
+    if [[ "$mode" == "manual" || "$mode" == "dynamic" || "$mode" == "both" ]]; then
+      question="${2:-What is changing about AI coding assistants for software teams?}"
+    else
+      question="$mode"
+      mode="manual"
+    fi
+    if [[ "$variant" == "starter" || "$mode" == "manual" ]]; then
+      WORKSPACE_DIR="$REPO_ROOT" "${UV[@]}" \
+        python "projects/p08-dynamic-workflows/starter/run_dynamic_workflow.py" \
+          "$question"
+    elif [[ "$mode" == "both" ]]; then
+      WORKSPACE_DIR="$REPO_ROOT" "${UV[@]}" \
+        python "projects/p08-dynamic-workflows/starter/run_dynamic_workflow.py" \
+          "$question"
+      WORKSPACE_DIR="$REPO_ROOT" "${UV[@]}" \
+        python "projects/p08-dynamic-workflows/solution/run_dynamic_workflow.py" \
+          "$question"
+    else
+      WORKSPACE_DIR="$REPO_ROOT" "${UV[@]}" \
+        python "projects/p08-dynamic-workflows/solution/run_dynamic_workflow.py" \
+          "$question"
+    fi
     ;;
 
   *)

@@ -1,4 +1,4 @@
-"""P08 starter - compare manual orchestration with dynamic workflows.
+"""P08 starter - manual deep-research orchestration.
 
 Run with:
     uv run --with openhands-sdk --with openhands-tools python run_dynamic_workflow.py
@@ -9,12 +9,9 @@ Cheap verification:
 Optional env vars:
     P08_MAX_ITERATIONS (default 40 per agent run)
 
-TODO:
-    1. Replace DYNAMIC_WORKFLOW_SKILL with a real workflow skill.
-    2. Register bounded reviewer and synthesizer sub-agents.
-    3. Create a parent agent with WorkflowToolSet.
-    4. Ask the model to write the fan-out/fan-in workflow.
-    5. Compare orchestration code, trace visibility, cost, and report quality.
+This starter is intentionally the old way: Python owns the research angles,
+the sequencing, the intermediate files, and the final synthesis step. The
+solution moves that orchestration into a workflow-capable harness.
 """
 
 from __future__ import annotations
@@ -44,6 +41,7 @@ from _runtime import (
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5-20250929"
 DEFAULT_SERVER = "http://127.0.0.1:18000"
 DEFAULT_MAX_ITERATIONS = 40
+DEFAULT_QUESTION = "What is changing about AI coding assistants for software teams?"
 
 IGNORE_PATTERNS = shutil.ignore_patterns(
     ".git",
@@ -60,110 +58,118 @@ IGNORE_PATTERNS = shutil.ignore_patterns(
 
 
 @dataclass(frozen=True)
-class Step:
+class ResearchAngle:
     label: str
+    title: str
     output: str
+    fact_output: str
     focus: str
-    prompt: str
 
 
-MANUAL_REVIEWERS = [
-    Step(
-        label="security",
-        output=".harness_workflow/manual/security.md",
-        focus="security and secret-handling risks",
-        prompt="""\
-Review {target} for security and secret-handling risks.
-
-Rules:
-- Do not edit files.
-- Do not read .env or print secret values.
-- Cite exact file paths and line numbers.
-- Write only your scoped findings to .harness_workflow/manual/security.md.
-""",
+RESEARCH_ANGLES = [
+    ResearchAngle(
+        label="market",
+        title="Market landscape and adoption",
+        output=".harness_workflow/manual/research_market.md",
+        fact_output=".harness_workflow/manual/fact_market.md",
+        focus="major products, buyer segments, adoption patterns, and where budgets are moving",
     ),
-    Step(
-        label="reliability",
-        output=".harness_workflow/manual/reliability.md",
-        focus="runtime failures and edge cases",
-        prompt="""\
-Review {target} for runtime failures, bad error handling, and edge cases.
-
-Rules:
-- Do not edit files.
-- Cite exact file paths and line numbers.
-- Prefer concrete failure modes over style preferences.
-- Write only your scoped findings to .harness_workflow/manual/reliability.md.
-""",
+    ResearchAngle(
+        label="technical",
+        title="Technical capabilities",
+        output=".harness_workflow/manual/research_technical.md",
+        fact_output=".harness_workflow/manual/fact_technical.md",
+        focus="agent capabilities, tool use, context management, evaluation, and workflow automation",
     ),
-    Step(
-        label="maintainability",
-        output=".harness_workflow/manual/maintainability.md",
-        focus="maintainability and API clarity",
-        prompt="""\
-Review {target} for maintainability, naming clarity, API boundaries, and code organization.
-
-Rules:
-- Do not edit files.
-- Cite exact file paths and line numbers.
-- Separate real maintainability risks from harmless preferences.
-- Write only your scoped findings to .harness_workflow/manual/maintainability.md.
-""",
+    ResearchAngle(
+        label="developer-workflow",
+        title="Developer workflow impact",
+        output=".harness_workflow/manual/research_workflow.md",
+        fact_output=".harness_workflow/manual/fact_workflow.md",
+        focus="how teams plan, code, review, test, and ship with coding agents",
     ),
-    Step(
-        label="tests",
-        output=".harness_workflow/manual/tests.md",
-        focus="missing tests and verification gaps",
-        prompt="""\
-Review {target} for missing tests and verification gaps.
-
-Rules:
-- Do not edit files.
-- Cite exact file paths and line numbers.
-- Suggest specific tests only where behavior is visible from the code.
-- Write only your scoped findings to .harness_workflow/manual/tests.md.
-""",
+    ResearchAngle(
+        label="risk",
+        title="Risks and open questions",
+        output=".harness_workflow/manual/research_risk.md",
+        fact_output=".harness_workflow/manual/fact_risk.md",
+        focus="security, correctness, cost, governance, evaluation gaps, and failure modes",
     ),
 ]
 
-MANUAL_AGGREGATE_PROMPT = """\
-Read these scoped review files:
-- .harness_workflow/manual/security.md
-- .harness_workflow/manual/reliability.md
-- .harness_workflow/manual/maintainability.md
-- .harness_workflow/manual/tests.md
 
-Write .harness_workflow/manual/REVIEW.md.
+RESEARCH_PROMPT = """\
+Deep-research question:
+{question}
 
-The final report must include:
-1. Overall verdict.
-2. Prioritized findings with exact paths and line numbers.
-3. Which reviewer found each issue.
-4. Explicit "No issue found" notes for clean categories.
-5. A short note on whether the fixed manual workflow was a good fit.
+Research angle:
+{title}
+
+Focus:
+{focus}
+
+Write a scoped research memo to:
+{output}
 
 Rules:
-- Do not invent findings beyond the scoped review files.
-- Preserve uncertainty from the scoped reviews.
-- Do not edit source files.
+- Use available tools to look for current, concrete evidence. If web browsing
+  or search is unavailable, say that clearly in the memo.
+- Prefer primary sources, product docs, release notes, technical reports, and
+  cited customer or benchmark claims.
+- Separate evidence from interpretation.
+- Include a "Claims to verify" section with the claims most likely to be stale,
+  overbroad, or marketing-driven.
+- Do not read .env or print secret values.
 """
 
-DYNAMIC_WORKFLOW_SKILL = """\
-TODO: Write a skill that tells the model:
-- when a dynamic workflow is appropriate
-- how many reviewers it may spawn
-- which actions are forbidden
-- what report and workflow-summary artifacts must be written
-- how to preserve evidence and uncertainty
+FACT_CHECK_PROMPT = """\
+Read {research_output}.
+
+Fact-check the scoped memo against the original question:
+{question}
+
+Write a verification memo to:
+{fact_output}
+
+Rules:
+- Mark major claims as Verified, Needs source, Stale risk, or Unsupported.
+- Preserve source URLs or exact citations from the research memo.
+- Flag any claim that depends on current pricing, market size, model capability,
+  release status, or customer adoption.
+- Do not invent new facts to make the memo look stronger.
 """
 
-DYNAMIC_PROMPT = """\
-TODO: Create a parent agent with the workflow tool and ask it to review {target}.
 
-The model should choose review dimensions dynamically, fan out to bounded
-reviewer sub-agents, then reduce the findings into:
-- .harness_workflow/dynamic/REVIEW.md
-- .harness_workflow/dynamic/WORKFLOW_SUMMARY.md
+def aggregate_prompt(question: str) -> str:
+    research_files = "\n".join(f"- {angle.output}" for angle in RESEARCH_ANGLES)
+    fact_files = "\n".join(f"- {angle.fact_output}" for angle in RESEARCH_ANGLES)
+    return f"""\
+Synthesize a deep-research report for:
+{question}
+
+Read the scoped research memos:
+{research_files}
+
+Read the verification memos:
+{fact_files}
+
+Write the final report to:
+.harness_workflow/manual/DEEP_RESEARCH_REPORT.md
+
+The final report must include:
+1. Executive summary.
+2. Key findings by theme.
+3. Evidence table with source or verification status.
+4. Areas of uncertainty and stale-risk claims.
+5. Implications for harness engineering and dynamic workflows.
+6. Open questions worth researching next.
+
+Rules:
+- Do not invent sources.
+- Preserve uncertainty from the verification memos.
+- If a claim was not verified, label it clearly.
+- Include a short note explaining that this result came from fixed manual
+  orchestration: Python chose the angles, ran the loops, and aggregated files.
 """
 
 
@@ -184,44 +190,12 @@ def resolve_workspace(value: str | None) -> Path:
     return resolve_host_working_dir(value)
 
 
-def _ignored(path: Path) -> bool:
-    return any(part in {".git", ".venv", "node_modules", ".openhands-runs"} for part in path.parts)
-
-
-def resolve_target(workspace: Path, value: str | None) -> str:
-    if value:
-        raw = Path(value).expanduser()
-        candidate = raw if raw.is_absolute() else workspace / raw
-        candidate = candidate.resolve()
-        try:
-            relative = candidate.relative_to(workspace)
-        except ValueError:
-            print(f"Target must be inside workspace: {candidate}", file=sys.stderr)
-            raise SystemExit(2)
-        if not candidate.exists() or not candidate.is_file():
-            print(f"Target file does not exist: {candidate}", file=sys.stderr)
-            raise SystemExit(2)
-        return relative.as_posix()
-
-    preferred = [workspace / "projects" / "_runtime.py", workspace / "scripts" / "quickstart.py"]
-    for candidate in preferred:
-        if candidate.exists():
-            return candidate.relative_to(workspace).as_posix()
-
-    for candidate in sorted(workspace.rglob("*.py")):
-        if not _ignored(candidate.relative_to(workspace)):
-            return candidate.relative_to(workspace).as_posix()
-
-    print("No Python target found. Pass --target path/to/file.py.", file=sys.stderr)
-    raise SystemExit(2)
-
-
 def copy_workspace(source: Path) -> Path:
     run_root = Path(
         os.environ.get("P08_RUN_ROOT", source / ".openhands-runs" / "p08-dynamic-workflows")
     ).expanduser()
     run_root.mkdir(parents=True, exist_ok=True)
-    destination = Path(tempfile.mkdtemp(prefix="p08_manual_", dir=run_root)) / "repo"
+    destination = Path(tempfile.mkdtemp(prefix="p08_manual_research_", dir=run_root)) / "repo"
     shutil.copytree(source, destination, ignore=IGNORE_PATTERNS)
     return destination
 
@@ -286,33 +260,55 @@ def run_prompt(label: str, llm, server: str, working_dir: Path, prompt: str) -> 
         conversation.close()
 
 
-def run_manual(workspace: Path, target: str) -> None:
+def manual_research_prompts(question: str) -> list[tuple[str, str]]:
+    prompts = []
+    for angle in RESEARCH_ANGLES:
+        prompts.append(
+            (
+                f"research:{angle.label}",
+                RESEARCH_PROMPT.format(
+                    question=question,
+                    title=angle.title,
+                    focus=angle.focus,
+                    output=angle.output,
+                ),
+            )
+        )
+    for angle in RESEARCH_ANGLES:
+        prompts.append(
+            (
+                f"fact-check:{angle.label}",
+                FACT_CHECK_PROMPT.format(
+                    question=question,
+                    research_output=angle.output,
+                    fact_output=angle.fact_output,
+                ),
+            )
+        )
+    prompts.append(("synthesize", aggregate_prompt(question)))
+    return prompts
+
+
+def run_manual(workspace: Path, question: str) -> None:
     from pydantic import SecretStr
     from openhands.sdk import LLM
 
     api_key, model, server = require_live_env()
     llm = LLM(usage_id="agent", model=model, api_key=SecretStr(api_key))
     copied_workspace = copy_workspace(workspace)
-    print(f"Manual workflow copied workspace: {copied_workspace}")
+    print(f"Manual deep-research workspace: {copied_workspace}")
     print(f"Agent-server working_dir: {server_visible_path(copied_workspace)}")
 
-    results = []
-    for step in MANUAL_REVIEWERS:
-        results.append(
-            run_prompt(
-                f"manual:{step.label}",
-                llm,
-                server,
-                copied_workspace,
-                step.prompt.format(target=target),
-            )
-        )
-    results.append(
-        run_prompt("manual:aggregate", llm, server, copied_workspace, MANUAL_AGGREGATE_PROMPT)
-    )
+    results = [
+        run_prompt(label, llm, server, copied_workspace, prompt)
+        for label, prompt in manual_research_prompts(question)
+    ]
 
     print_results(results)
-    print(f"Manual report: {copied_workspace / '.harness_workflow' / 'manual' / 'REVIEW.md'}")
+    print(
+        "Manual report: "
+        f"{copied_workspace / '.harness_workflow' / 'manual' / 'DEEP_RESEARCH_REPORT.md'}"
+    )
 
 
 def print_results(results: list[dict]) -> None:
@@ -330,32 +326,22 @@ def print_results(results: list[dict]) -> None:
     print("=" * 96)
 
 
-def print_dry_run(mode: str, workspace: Path, target: str) -> None:
+def print_dry_run(workspace: Path, question: str) -> None:
     print(f"Workspace: {workspace}")
-    print(f"Target: {target}")
-    print(f"Mode: {mode}")
+    print(f"Question: {question}")
     print("\nNo model calls will be made.")
-
-    if mode in {"both", "manual"}:
-        print("\n--- manual fixed reviewers ---")
-        for step in MANUAL_REVIEWERS:
-            print(f"\n[{step.label}] -> {step.output}")
-            print(textwrap.indent(step.prompt.format(target=target).strip(), "  "))
-        print("\n[aggregate] -> .harness_workflow/manual/REVIEW.md")
-        print(textwrap.indent(MANUAL_AGGREGATE_PROMPT.strip(), "  "))
-
-    if mode in {"both", "dynamic"}:
-        print("\n--- dynamic workflow TODO ---")
-        print(textwrap.indent(DYNAMIC_WORKFLOW_SKILL.strip(), "  "))
-        print("\n--- dynamic prompt TODO ---")
-        print(textwrap.indent(DYNAMIC_PROMPT.format(target=target).strip(), "  "))
+    print("\n--- fixed manual deep-research workflow ---")
+    for label, prompt in manual_research_prompts(question):
+        print(f"\n[{label}]")
+        print(textwrap.indent(prompt.strip(), "  "))
+    print("\nManual orchestration code owns every step above.")
+    print("Read the P08 README, then build the dynamic workflow in the solution.")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="P08 dynamic workflow starter.")
-    parser.add_argument("--mode", choices=["both", "manual", "dynamic"], default="manual")
-    parser.add_argument("--workspace", default=None, help="Repo to review. Defaults to WORKSPACE_DIR or cwd.")
-    parser.add_argument("--target", default=None, help="Target file inside the workspace.")
+    parser = argparse.ArgumentParser(description="P08 manual deep-research starter.")
+    parser.add_argument("question", nargs="?", default=DEFAULT_QUESTION)
+    parser.add_argument("--workspace", default=None, help="Workspace for artifacts. Defaults to WORKSPACE_DIR or cwd.")
     parser.add_argument("--dry-run", action="store_true", help="Print prompts without model calls.")
     return parser.parse_args()
 
@@ -363,14 +349,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     workspace = resolve_workspace(args.workspace)
-    target = resolve_target(workspace, args.target)
     if args.dry_run:
-        print_dry_run(args.mode, workspace, target)
+        print_dry_run(workspace, args.question)
         return
-    if args.mode in {"both", "dynamic"}:
-        print("Dynamic mode is intentionally left as a starter TODO.", file=sys.stderr)
-        raise SystemExit(2)
-    run_manual(workspace, target)
+    run_manual(workspace, args.question)
 
 
 if __name__ == "__main__":
