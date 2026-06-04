@@ -25,7 +25,7 @@
 
 Pause and predict:
 
-- Which model should the router choose for the default `VITE_BACKEND_HOST` prompt?
+- Which model should the router choose for the default backend env-var prompt?
 - What prompt words should force the flagship branch?
 - What cost reduction would make the routed config worth keeping?
 - What trace or correctness failure would prove the router is too aggressive?
@@ -54,7 +54,7 @@ Pause and predict:
 2. Fork from start (or re-create) and run config B. Same metrics.
 3. Run config C. Same metrics. Note which model the policy selected and whether that matches your intent.
 
-The default `VITE_BACKEND_HOST` prompt is text-only, so the shipped policy should
+The default backend env-var prompt is text-only, so the shipped policy should
 select the small model. To prove the flagship branch exists, rerun with a prompt
 that contains one of the flagship markers:
 

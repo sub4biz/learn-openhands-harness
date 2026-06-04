@@ -111,7 +111,7 @@ set +a
 
 Optional knobs: `LLM_MODEL` for the main model, `LLM_MODEL_SMALL` for routing experiments, `WORKSPACE_DIR` for the repo the agent inspects. Never commit a real `.env`. If a key leaks, rotate it.
 
-**Safety note.** This tutorial starts dockerless on purpose. That's the easiest way to see the agent server, HTTP API, filesystem, and trace without another layer in the way. But `npm run dev:dangerously-dockerless` runs tool calls directly on your host. Point it at a scratch repo, not one you care about. P06 moves you to Docker. Until then, treat dockerless mode as a learning microscope, not a safe operating mode.
+**Safety note.** This tutorial starts dockerless on purpose. That's the easiest way to see the agent server, HTTP API, filesystem, and trace without another layer in the way. Current Agent Canvas uses `npm run dev` for this local stack, and tool calls run directly on your host. Point it at a scratch repo, not one you care about. P06 moves you to Docker. Until then, treat dockerless mode as a learning microscope, not a safe operating mode.
 
 ---
 

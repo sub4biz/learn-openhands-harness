@@ -39,7 +39,7 @@ Pause and predict:
   `WORKSPACE_DIR=/projects/agent-canvas` or set
   `AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects` and
   `AGENT_WORKSPACE_SERVER_ROOT=/projects` so host paths map correctly.
-- Good default prompt: `"Find every place VITE_BACKEND_HOST is read or set, and write a short note explaining how the dev script picks the backend."`
+- Good default prompt: `"Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set, and write a short note explaining how the dev script picks the backend."`
 
 ## Procedure
 

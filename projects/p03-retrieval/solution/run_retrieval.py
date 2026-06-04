@@ -38,7 +38,7 @@ from _runtime import (
 )
 
 PROMPT = (
-    "Find every place VITE_BACKEND_HOST is read or set, "
+    "Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set, "
     "and write a short note explaining how the dev script picks the backend."
 )
 
@@ -172,7 +172,7 @@ def run_mcp_live_smoke() -> None:
         working_dir,
         (
             "Use the search_code tool once with query "
-            "'backend proxy VITE_BACKEND_HOST'. Then answer with the top two "
+            "'backend proxy VITE_BACKEND_HOST VITE_BACKEND_BASE_URL'. Then answer with the top two "
             "file paths only. Do not edit files."
         ),
         max_iterations=3,

@@ -59,23 +59,25 @@ The canvas dev script will install Python dependencies into uvx-managed envs on 
 
 ## 1.2 Clone and start the canvas
 
-This command is named `dangerously-dockerless` for a reason. Keep the first run
-small and reversible. A good target is a scratch clone or the tiny default
-workspace created by the canvas. Do not point it at your main work repo until
-you have moved to the Docker path in the tour.
+Current Agent Canvas uses `npm run dev` for the full local no-Docker stack. Older
+checkouts called this `dev:dangerously-dockerless`; the warning still applies.
+Keep the first run small and reversible. A good target is a scratch clone or the
+tiny default workspace created by the canvas. Do not point it at your main work
+repo until you have moved to the Docker path in the tour.
 
 ```bash
 git clone https://github.com/OpenHands/agent-canvas.git
 cd agent-canvas
 npm install
-npm run dev:dangerously-dockerless
+npm run dev
 ```
 
-Do not substitute `npm run dev` unless you know which mode your checkout uses.
-Recent Agent Canvas builds may start a Dockerized agent server from `npm run dev`
-or `npm run dev:docker`. In that mode, the server usually sees your project
-root at `/projects`, not at your host path such as `/Users/you/Code`. The SDK
-scripts in this repo can map host paths for you when these are set:
+If you are on an older Agent Canvas checkout, read its `README.md` and
+`DEVELOPMENT.md` before substituting another script. If you intentionally use a
+Dockerized Agent Canvas image or an older `dev:docker` workflow, the server
+usually sees your project root at `/projects`, not at your host path such as
+`/Users/you/Code`. The SDK scripts in this repo can map host paths for you when
+these are set:
 
 ```bash
 export AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects
@@ -195,9 +197,9 @@ If any of the above is false, fix it now. Common failures and fixes:
 | `uvx: command not found` | `uv` not on `PATH` | Re-source your shell, or `~/.local/bin/uvx --version` |
 | Server exits immediately, no health endpoint | `uvx` install/start failure or a busy port | Re-read the launcher error; rerun after freeing the port or fixing `uvx` |
 | `500 Internal Server Error` when creating a conversation, with a host path like `/Users/...` or `/private/var/...` in the stack trace | Dockerized agent server cannot see the host path passed as `working_dir` | Set `AGENT_WORKSPACE_HOST_ROOT` + `AGENT_WORKSPACE_SERVER_ROOT`, or set `WORKSPACE_DIR` to the server path such as `/projects/agent-canvas` |
-| `500 Internal Server Error` with `tmux` / `File name too long` | macOS temp path made the tmux socket path too long | Restart the server with a short tmux temp dir: `mkdir -p /private/tmp/oh-tmux && TMUX_TMPDIR=/private/tmp/oh-tmux npm run dev:dangerously-dockerless` |
+| `500 Internal Server Error` with `tmux` / `File name too long` | macOS temp path made the tmux socket path too long | Restart the server with a short tmux temp dir: `mkdir -p /private/tmp/oh-tmux && TMUX_TMPDIR=/private/tmp/oh-tmux npm run dev` |
 | `401 Unauthorized` from `/api/*` | Dev server generated a session API key | Send `X-Session-API-Key: $(cat ~/.openhands/agent-canvas/session-api-key.txt)` or pin `SESSION_API_KEY` / `VITE_SESSION_API_KEY` before restart |
-| Canvas blank, console errors about CORS | Frontend pointing at wrong backend | In the full dockerless stack, `VITE_BACKEND_HOST` should point at the ingress port (`127.0.0.1:8000` by default). In frontend-only mode, point it at your existing backend. |
-| Canvas can't connect, port 8000 in use | Some other dev server | Set `PORT=8123 npm run dev:dangerously-dockerless` |
+| Canvas blank, console errors about CORS | Frontend pointing at wrong backend | In the full dockerless stack, `VITE_BACKEND_BASE_URL` should point at the ingress URL (`http://127.0.0.1:8000` by default), and `VITE_BACKEND_HOST` should use `127.0.0.1:8000` for the Vite proxy. In frontend-only mode, point it at your existing backend. |
+| Canvas can't connect, port 8000 in use | Some other dev server | Set `PORT=8123 npm run dev` |
 
 Once the checklist passes, move on to [`02-harness-tour.md`](./02-harness-tour.md).

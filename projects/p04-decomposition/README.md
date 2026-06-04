@@ -70,10 +70,10 @@ If the monolithic run still hits the cap, the script writes
 `MONOLITH_TRUNCATED.md` in the copied workspace and continues. Treat that as a
 result: "the one-prompt version could not finish under this budget."
 
-If your agent server is Dockerized with Agent Canvas `npm run dev` or
-`npm run dev:docker`, the server sees your `PROJECT_PATH` mount at `/projects`.
-Run the script from the same shell where `PROJECT_PATH` is set, or pass the
-mapping explicitly:
+If your agent server is Dockerized with an Agent Canvas container image or an
+older `dev:docker` workflow, the server sees your `PROJECT_PATH` mount at
+`/projects`. Run the script from the same shell where `PROJECT_PATH` is set, or
+pass the mapping explicitly:
 
 ```bash
 AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects \

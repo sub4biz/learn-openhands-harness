@@ -8,7 +8,7 @@ The pattern is behavior first: decide what agent behavior you want, change the s
 
 > **Inspired by [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering)**, which organizes harness learning as a sequence of cumulative projects on the same Electron app rather than disconnected one-off ablations. That's a better shape for learning than the standard "here are some experiments" format, and it adapts naturally to OpenHands. The phase names, the two-column "What You Do / Harness Mechanism" preamble, and the "each project's solution becomes the next project's starter" property are all borrowed from there. Credit where it's due.
 
-> **Common task for P01-P03 and P05.** Pick one repo and one prompt, and freeze them. A good default: clone [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas) and use the prompt `"Find every place VITE_BACKEND_HOST is read or set, and write a short note explaining how the dev script picks the backend."`, narrow, repeatable, doesn't write code, and forces real retrieval. P04 intentionally switches to a larger release-readiness task so decomposition has something real to improve.
+> **Common task for P01-P03 and P05.** Pick one repo and one prompt, and freeze them. A good default: clone [`OpenHands/agent-canvas`](https://github.com/OpenHands/agent-canvas) and use the prompt `"Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set, and write a short note explaining how the dev script picks the backend."`, narrow, repeatable, doesn't write code, and forces real retrieval. P04 intentionally switches to a larger release-readiness task so decomposition has something real to improve.
 
 ---
 
@@ -82,6 +82,8 @@ PROJECT EVOLUTION (OpenHands harness)
 
 ---
 
+**P08 availability note.** As of June 4, 2026, OpenHands dynamic workflow support is still in [software-agent-sdk PR #3426](https://github.com/OpenHands/software-agent-sdk/pull/3426). The P08 dry runs work with the standard setup, but live dynamic workflow mode needs that PR branch or a future SDK release that includes `WorkflowToolSet`.
+
 ## How each project is organized
 
 Every project directory follows the same shape:
@@ -154,8 +156,8 @@ set +a
 `WORKSPACE_DIR` should point at the repo you are studying. If omitted, the
 scripts use the current directory.
 
-If your Agent Canvas server is Dockerized (`npm run dev` or `npm run dev:docker`
-in some checkouts), remember that the server sees your project root at
+If your Agent Canvas server is Dockerized through a container image or an older
+`dev:docker` workflow, remember that the server sees your project root at
 `/projects`. Either pass a server-visible path:
 
 ```bash
@@ -187,7 +189,7 @@ Keep a `results.md` next to your fork:
 
 Repo: agent-canvas @ <SHA>
 Model: anthropic/claude-sonnet-4-5-20250929 (unless noted)
-Prompt: "Find every place VITE_BACKEND_HOST is read or set..."
+Prompt: "Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set..."
 
 ## P01: Canvas + agent trace
 | Trace field | Value |

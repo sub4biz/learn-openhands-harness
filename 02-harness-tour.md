@@ -10,15 +10,16 @@ In this tour you'll give the agent a real task, watch it work, and then walk thr
 
 ## 2.1 Give it a real task
 
-You just set up the agent-canvas project in the quickstart. The canvas frontend needs to know where the backend server lives, and that's controlled by an environment variable called `VITE_BACKEND_HOST`. It gets read in frontend code, set in dev scripts, and overridden in different configurations. How that wiring works is a real question a developer would ask when joining this project.
+You just set up the agent-canvas project in the quickstart. The canvas frontend needs to know where the backend server lives, and that wiring now uses both `VITE_BACKEND_BASE_URL` for direct browser requests and `VITE_BACKEND_HOST` for the Vite proxy. Those values are set in dev scripts and overridden in different configurations. How that wiring works is a real question a developer would ask when joining this project.
 
 It also makes a good harness test. The agent has to search across multiple files, read what it finds, connect the dots, and produce a written summary, without modifying anything. You'll reuse this same prompt across the early projects so you can compare how different harness configurations change the agent's behavior on the same task.
 
 Open the canvas at `http://localhost:8000`. Start a new conversation and paste this prompt:
 
 ```
-Find every place VITE_BACKEND_HOST is read or set in this project,
-and write a short note explaining how the dev script picks the backend.
+Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set
+in this project, and write a short note explaining how the dev script picks
+the backend.
 ```
 
 Watch the agent work. When it finishes, come back here.
@@ -119,7 +120,7 @@ Together these turn the agent loop from "run everything blindly" into "run safe 
 
 Your agent ran as a single process on your laptop, with direct access to your filesystem. That's one architecture. OpenHands ships three:
 
-- A **local subprocess** (what `npm run dev:dangerously-dockerless` gives you, full filesystem access, fine for learning)
+- A **local subprocess** (what current Agent Canvas `npm run dev` gives you, full filesystem access, fine for learning)
 - A **[Docker sandbox](https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox)** (isolated filesystem and network, kill the container and everything resets)
 - A **[cloud workspace](https://docs.openhands.dev/sdk/guides/agent-server/cloud-workspace)** (hosted runtime, no local Docker needed).
 

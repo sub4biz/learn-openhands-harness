@@ -26,7 +26,7 @@ from _runtime import (
 )
 
 PROMPT = (
-    "Find every place VITE_BACKEND_HOST is read or set, "
+    "Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set, "
     "and write a short note explaining how the dev script picks the backend."
 )
 

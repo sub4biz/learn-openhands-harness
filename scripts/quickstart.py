@@ -1,6 +1,6 @@
 """
 Send the canonical 'three facts' task through the agent server that
-agent-canvas spun up via `npm run dev:dangerously-dockerless`.
+agent-canvas spun up via `npm run dev`.
 Mirrors 01-quickstart.md §1.5.
 
 Run with:

@@ -23,8 +23,13 @@ Before building the solution, skim the docs and examples that define the moving 
 - [OpenHands Agent Skills & Context](https://docs.openhands.dev/sdk/guides/skill): how reusable instructions enter the agent context.
 - [OpenHands Sub-Agent Delegation](https://docs.openhands.dev/sdk/guides/agent-delegation): the underlying fan-out/fan-in pattern and why sub-agents need bounded roles.
 - [workflow-demos deep research](https://github.com/rajshah4/workflow-demos): the open example this lesson adapts.
+- [Dynamic Workflows deep-dive video](https://www.youtube.com/watch?v=PtbrKTgj3X8): walkthrough of the deep-research example and model-authored orchestration.
 - [Claude Code dynamic workflows](https://claude.com/blog/introducing-dynamic-workflows-in-claude-code): the product pattern behind model-authored orchestration.
 - [Cursor 2.4 skills and subagents](https://cursor.com/changelog/2-4): another example of moving procedural knowledge into model-readable skills.
+
+## Current SDK status
+
+As of June 4, 2026, OpenHands dynamic workflow support is still in [software-agent-sdk PR #3426](https://github.com/OpenHands/software-agent-sdk/pull/3426), not necessarily in the default released SDK package. The dry-run commands in this lesson work today because they avoid live workflow imports. Live dynamic mode requires either the PR branch or a future SDK release that includes `WorkflowToolSet`.
 
 ## Agent-assisted path
 
@@ -84,7 +89,7 @@ uv run --with openhands-sdk --with openhands-tools \
   "How are coding agents changing release engineering?"
 ```
 
-Live dynamic mode requires an OpenHands SDK build with `WorkflowToolSet`. At the time this lesson was added, the public demo pointed to OpenHands SDK PR #3426 for workflow support. If your installed SDK does not expose `openhands.tools.workflow`, the script exits with a clear message and the dry run still teaches the code-shape comparison.
+Live dynamic mode requires an OpenHands SDK build with `WorkflowToolSet`; see the current SDK status note above. If your installed SDK does not expose `openhands.tools.workflow`, the script exits with a clear message and the dry run still teaches the code-shape comparison.
 
 ```bash
 cd projects/p08-dynamic-workflows/solution

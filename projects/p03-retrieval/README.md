@@ -26,7 +26,7 @@
 
 Pause and predict:
 
-- Should exact-symbol search for `VITE_BACKEND_HOST` need MCP at all?
+- Should exact-symbol search for `VITE_BACKEND_HOST` and `VITE_BACKEND_BASE_URL` need MCP at all?
 - What synonym prompt might expose a vocabulary mismatch?
 - What trace evidence would show `search_code` earned its slot?
 - If `search_code` is available but used zero times, what does that tell you?
@@ -71,7 +71,7 @@ That command should print `MCP` as `1` or more.
 
 ## What to look for
 
-- For a repo where the query and source share vocabulary (`VITE_BACKEND_HOST` is mentioned by exact name), `grep` wins on latency and accuracy. Semantic adds turns without adding answers.
+- For a repo where the query and source share vocabulary (`VITE_BACKEND_HOST` and `VITE_BACKEND_BASE_URL` are mentioned by exact name), `grep` wins on latency and accuracy. Semantic adds turns without adding answers.
 - Switch the prompt to something with a synonym gap (`"how does the canvas pick which backend to talk to"`). A strong flagship may still recover by grepping adjacent terms like `backend` and `proxy`; that is useful data, not a failure of the lesson.
 - MCP earns its slot only when `search_code` improves correctness, reduces misses, or avoids expensive wandering. If the MCP-call column is zero, the model did not need or choose the tool. This server is intentionally small: BM25-style scoring plus a few synonym expansions, not an embeddings service.
 

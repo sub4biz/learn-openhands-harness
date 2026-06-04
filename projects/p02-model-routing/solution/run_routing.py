@@ -6,7 +6,7 @@ Run with:
 Required env vars:  LLM_API_KEY
 Optional:           LLM_MODEL (default anthropic/claude-sonnet-4-5-20250929)
                     LLM_MODEL_SMALL (default anthropic/claude-haiku-4-5-20251001)
-                    P02_PROMPT (override the default VITE_BACKEND_HOST prompt)
+                    P02_PROMPT (override the default backend env-var prompt)
                     AGENT_SERVER (default http://127.0.0.1:18000)
                     WORKSPACE_DIR (default current directory)
 """
@@ -30,7 +30,7 @@ from _runtime import (
 )
 
 DEFAULT_PROMPT = (
-    "Find every place VITE_BACKEND_HOST is read or set, "
+    "Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set, "
     "and write a short note explaining how the dev script picks the backend."
 )
 
