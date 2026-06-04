@@ -1,6 +1,6 @@
 # Learn Harness Engineering on OpenHands
 
-Every coding agent ships two things: a model that reasons and a harness that does everything else. The harness decides what the model sees, which tools it can call, what it remembers across turns, when it stops, and whether it runs in a sandbox or on your bare machine. When an agent breaks, it's almost never the model. It's a harness decision you didn't know you were making.
+Every coding agent ships two things: a model that reasons and a harness that does everything else. The harness decides what the model sees, which tools it can call, what it remembers across turns, when it stops, and whether it runs in a sandbox or on your bare machine. This translates into implications for performance, reliablity, and latency.
 
 This tutorial gives you a working harness you can open, run, and change. You'll use two open-source projects, [Agent Server](https://docs.openhands.dev/sdk/arch/agent-server) (the HTTP API that owns the workspace, conversation state, and tool dispatch) and [Agent Canvas](https://github.com/OpenHands/agent-canvas) (the operator UI), as a microscope. You'll give the agent real tasks, read the trace of what happened, and then change one lever at a time to see the behavior shift.
 
@@ -22,11 +22,11 @@ For each phase:
 2. Inspect the starter code.
 3. Predict what the harness should do.
 4. Run one small experiment.
-5. Inspect the Agent Canvas trace.
+5. Inspect thetrace.
 6. Record the takeaway before moving on.
 
-Start live runs in Agent Canvas when learning a new concept. The Canvas trace is
-the teaching surface: prompts, tool calls, observations, confirmations,
+Start live runs in Agent Canvas when learning a new concept. Use the coding agent
+as a learning point: prompts, tool calls, observations, confirmations,
 compaction, and final answers are visible in order. Use the SDK scripts after
 the trace behavior is clear and you need repeatable measurements such as events,
 tokens, cost, pass rate, or saved trace JSON.
