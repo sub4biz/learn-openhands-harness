@@ -1,6 +1,6 @@
 # Videos And Talks
 
-Use the videos for the narrative version of the course. Use the projects when you want to build and measure the harness.
+These videos provide a narrative view of harness engineering. Get the basic ideas here, then use the projects for hands-on experience.
 
 ## Harness Engineering Talk
 

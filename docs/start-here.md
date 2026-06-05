@@ -1,6 +1,6 @@
 # Start Here
 
-This course is a guided lab. You are not trying to make an agent run the whole course for you. You are learning to see which harness lever changed and how that change appears in the trace.
+This course is a guided lab. The goal is to change how you think, not just run through the exercises. Do not use an agent to quickly solve every problem. At most, guide the agent to code your ideas. Even then, look carefully at the results and try different combinations. You want a deep understanding of each of these problems.
 
 ## The Four Entry Points
 
@@ -39,5 +39,3 @@ The full setup is in the [Quickstart](/quickstart). The runnable source is in th
 ## What You Will Build
 
 By P07, you will have a runnable `harness.py` that combines model selection, tool policy, retrieval, memory, safety, sandboxing, and critic evaluation. P08 and P09 are advanced extensions for dynamic workflows and measured model routing.
-
-The main habit is simple: separate stable harness policy from one-off task inputs.

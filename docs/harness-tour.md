@@ -1,6 +1,6 @@
 # Harness Tour
 
-The full tour lives in [`02-harness-tour.md`](https://github.com/rajshah4/learn-openhands-harness/blob/main/02-harness-tour.md). This page gives the map before you start.
+The full tour lives in [`02-harness-tour.md`](https://github.com/rajshah4/learn-openhands-harness/blob/main/02-harness-tour.md). This page introduces what you will look for before you start.
 
 ## The Task
 

@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: Learn Harness Engineering with OpenHands
-  text: Build and inspect the system around the model.
-  tagline: A hands-on course that uses OpenHands as the lab bench for model routing, tools, memory, safety, critics, traces, metrics, and workflow design.
+  text: Get more from your coding models
+  tagline: "A hands-on course for understanding the harness around modern coding agents: model routing, tools, memory, safety, critics, traces, metrics, and workflow design."
   image:
     src: /images/openhands-harness-map.svg
     alt: OpenHands harness learning map
@@ -20,12 +20,12 @@ hero:
       link: https://github.com/rajshah4/learn-openhands-harness
 
 features:
-  - title: Run The Harness
-    details: Start Agent Canvas, send real tasks through Agent Server, and watch the typed event trace instead of guessing what happened.
+  - title: Run The OpenHands Harness
+    details: Start with the basics through Agent Canvas and Agent Server by running a request and viewing the trace.
   - title: Change One Lever
     details: Swap model routing, retrieval, memory, safety, critic, workflow, or escalation policy while keeping the task fixed.
-  - title: Measure The Result
-    details: Compare events, tools, tokens, cost, pass rate, traces, and cost per solved task before keeping a harness policy.
+  - title: See the Effect
+    details: Compare events, tools, tokens, cost, pass rate, traces, and cost per solved task for different configurations.
 ---
 
 # A Friendly Front Door To The OpenHands Lab
@@ -37,12 +37,12 @@ Harness engineering is the work around the model. The model writes code. The har
 <div class="course-grid">
   <div class="course-card">
     <h3>Understand The Thesis</h3>
-    <p>Start with the harness engineering framing, the talk, and the experiments that show why model capability is not the same as execution reliability.</p>
+    <p>Start with the harness engineering framing, the talk, and the experiments that show why harness design matters as much as model capability.</p>
     <p><a href="/learn-openhands-harness/concepts/">Read the concepts</a></p>
   </div>
   <div class="course-card">
     <h3>Build The Harness</h3>
-    <p>Work through P01 to P09. Each project changes one OpenHands harness lever and asks you to inspect the trace before keeping the policy.</p>
+    <p>Work through P01 to P09. Each project changes one harness lever and asks you to inspect the trace before keeping the policy.</p>
     <p><a href="/learn-openhands-harness/projects/">Open the projects</a></p>
   </div>
   <div class="course-card">
@@ -54,17 +54,17 @@ Harness engineering is the work around the model. The model writes code. The har
 
 ## What Makes This Course Different?
 
-This is not a general prompt engineering course. It is an OpenHands implementation course.
+This is not a general prompt engineering course. It is not about copying and pasting the latest skill. It is designed to help you understand the core principles behind modern coding agents and harnesses. The examples are built so you can see the effect of each choice, which is more useful than only reading about it.
 
 You use:
 
 - **Agent Server** as the harness runtime.
 - **Agent Canvas** as the trace and operator surface.
 - **OpenHands SDK** as the programmable harness.
-- **Laminar traces and SDK metrics** as evidence.
+- **Laminar traces and SDK metrics** for observability.
 - **Starter and solution projects** as controlled experiments.
 
-The goal is not to memorize APIs. The goal is to look at any coding agent and ask: which harness lever would I change if I owned the source?
+The goal is not to memorize APIs. The goal is deeper understanding, so on your next project you know which harness levers to pull to solve your problem.
 
 ## Start Here
 

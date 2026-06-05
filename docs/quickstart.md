@@ -4,7 +4,7 @@ The quickstart gets you from zero to a visible OpenHands trace. The full runnabl
 
 ## What You Are Proving
 
-You are proving that Agent Server and Agent Canvas are alive, that the model can run through the harness, and that you can inspect the resulting events.
+You are checking that Agent Server and Agent Canvas are working, that the model can run through the harness, and that you can inspect the resulting events.
 
 The first run is intentionally small:
 
@@ -26,7 +26,7 @@ The quickstart also shows how to call the same server through the Python SDK, wh
 
 ## Safety Note
 
-The first setup is dockerless so the moving parts are easy to see. Treat that as a learning microscope, not a safe operating mode. Use a scratch repo. P06 moves the harness into `DockerWorkspace`.
+The first setup is dockerless so the moving parts are easy to see. Be careful and use a scratch repo. For regular work, you will want to use a sandbox. P06 moves the harness into `DockerWorkspace`.
 
 ## Continue
 
