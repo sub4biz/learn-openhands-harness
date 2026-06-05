@@ -1,0 +1,377 @@
+@font-face {
+  font-family: "Sohne Kraftig";
+  src: url("https://www.openhands.dev/assets/fonts/Sohne-Kraftig.otf")
+    format("opentype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: "Sohne Kraftig";
+  src: url("https://www.openhands.dev/assets/fonts/Sohne-Kraftig.otf")
+    format("opentype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Sohne Kraftig";
+  src: url("https://www.openhands.dev/assets/fonts/Sohne-Kraftig.otf")
+    format("opentype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "Sohne Buch";
+  src: url("https://www.openhands.dev/assets/fonts/Sohne-Buch.otf")
+    format("opentype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: Geistmono;
+  src: url("https://www.openhands.dev/assets/fonts/GeistMono-Regular.otf")
+    format("opentype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Quincy CF";
+  src: url("https://www.openhands.dev/assets/fonts/QuincyCF-Regular.woff")
+    format("woff");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+:root {
+  --oh-bg: #f9f0d9;
+  --oh-bg-soft: #f9f6e9;
+  --oh-bg-alt: #f1eae0;
+  --oh-fg: #22150d;
+  --oh-muted: #5f5f5f;
+  --oh-border: #b3a88c;
+  --oh-accent: #ffff8b;
+  --oh-brown: #8a5f45;
+  --oh-red: #e31700;
+
+  --vp-c-bg: var(--oh-bg);
+  --vp-c-bg-alt: var(--oh-bg-alt);
+  --vp-c-bg-elv: var(--oh-bg-soft);
+  --vp-c-bg-soft: var(--oh-bg-soft);
+  --vp-c-border: var(--oh-border);
+  --vp-c-divider: rgb(34 21 13 / 18%);
+  --vp-c-gutter: rgb(34 21 13 / 14%);
+  --vp-c-text-1: var(--oh-fg);
+  --vp-c-text-2: var(--oh-muted);
+  --vp-c-text-3: var(--oh-brown);
+  --vp-c-brand-1: var(--oh-fg);
+  --vp-c-brand-2: var(--oh-brown);
+  --vp-c-brand-3: var(--oh-accent);
+  --vp-c-brand-soft: rgb(255 255 139 / 52%);
+  --vp-code-color: var(--oh-fg);
+  --vp-code-bg: rgb(34 21 13 / 8%);
+  --vp-code-block-bg: var(--oh-fg);
+  --vp-code-block-color: var(--oh-bg);
+  --vp-button-brand-border: var(--oh-fg);
+  --vp-button-brand-text: var(--oh-bg);
+  --vp-button-brand-bg: var(--oh-fg);
+  --vp-button-brand-hover-border: var(--oh-brown);
+  --vp-button-brand-hover-text: var(--oh-bg);
+  --vp-button-brand-hover-bg: var(--oh-brown);
+  --vp-button-alt-border: var(--oh-fg);
+  --vp-button-alt-text: var(--oh-fg);
+  --vp-button-alt-bg: rgb(255 255 255 / 34%);
+  --vp-button-alt-hover-border: var(--oh-brown);
+  --vp-button-alt-hover-text: var(--oh-fg);
+  --vp-button-alt-hover-bg: rgb(255 255 139 / 56%);
+  --vp-home-hero-name-color: var(--oh-fg);
+  --vp-home-hero-image-background-image: none;
+  --vp-home-hero-image-filter: none;
+  --vp-font-family-base: "Sohne Kraftig", "Sohne Buch", Arial, sans-serif;
+  --vp-font-family-mono: Geistmono, ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+}
+
+.dark {
+  --vp-c-bg: #0b0d0e;
+  --vp-c-bg-alt: #17120e;
+  --vp-c-bg-elv: #22150d;
+  --vp-c-bg-soft: #17120e;
+  --vp-c-border: #5f5f5f;
+  --vp-c-divider: rgb(249 240 217 / 18%);
+  --vp-c-gutter: rgb(249 240 217 / 14%);
+  --vp-c-text-1: #f9f0d9;
+  --vp-c-text-2: #b3a88c;
+  --vp-c-text-3: #f1eae0;
+  --vp-c-brand-1: #ffe165;
+  --vp-c-brand-2: #ffff8b;
+  --vp-c-brand-3: #99873c;
+  --vp-c-brand-soft: rgb(255 225 101 / 18%);
+  --vp-code-bg: rgb(249 240 217 / 12%);
+  --vp-code-block-bg: #17120e;
+  --vp-button-brand-border: #ffe165;
+  --vp-button-brand-text: #22150d;
+  --vp-button-brand-bg: #ffe165;
+  --vp-button-brand-hover-border: #ffff8b;
+  --vp-button-brand-hover-text: #22150d;
+  --vp-button-brand-hover-bg: #ffff8b;
+  --vp-button-alt-border: #b3a88c;
+  --vp-button-alt-text: #f9f0d9;
+  --vp-button-alt-bg: rgb(241 234 224 / 10%);
+  --vp-button-alt-hover-border: #ffff8b;
+  --vp-button-alt-hover-text: #ffff8b;
+  --vp-button-alt-hover-bg: rgb(255 255 139 / 10%);
+  --vp-home-hero-name-color: #f9f0d9;
+}
+
+::selection {
+  background: var(--oh-fg);
+  color: var(--oh-bg);
+}
+
+html,
+body,
+.Layout {
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+}
+
+body {
+  font-feature-settings: "kern";
+  line-height: 1.4;
+  text-wrap: pretty;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.VPNav,
+.VPNavBar,
+.VPNavBar.fill .content-body,
+.VPLocalNav,
+.VPSidebar {
+  background: var(--vp-c-bg);
+}
+
+.VPNavBar.has-sidebar .content,
+.VPNavBar.has-sidebar .curtain,
+.VPNavBar .divider-line,
+.VPSidebar {
+  border-color: var(--vp-c-divider);
+}
+
+.VPNavBarTitle .title,
+.VPNavBarMenuLink,
+.VPNavBarMenuGroup .button {
+  color: var(--vp-c-text-1);
+}
+
+.VPNavBarMenuLink:hover,
+.VPNavBarMenuGroup .button:hover,
+.VPSidebarItem.is-active > .item .link > .text,
+.VPSidebarItem .link:hover > .text {
+  color: var(--oh-brown);
+}
+
+.VPHome {
+  background: radial-gradient(
+      circle at 82% 16%,
+      rgb(255 255 139 / 42%),
+      transparent 28%
+    ),
+    var(--vp-c-bg);
+}
+
+.VPHomeHero {
+  padding-top: 68px;
+}
+
+.VPHomeHero .name,
+.VPHomeHero .text {
+  color: var(--vp-c-text-1);
+  font-family: "Quincy CF", "Sohne Kraftig", Arial, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.VPHomeHero .tagline {
+  color: var(--vp-c-text-2);
+  font-family: "Sohne Buch", "Sohne Kraftig", Arial, sans-serif;
+  line-height: 1.45;
+}
+
+.VPHomeHero .image-bg {
+  display: none;
+}
+
+.VPHomeHero .image-src {
+  border: 1px solid var(--oh-border);
+  border-radius: 8px;
+  box-shadow: 0 18px 48px rgb(34 21 13 / 14%);
+}
+
+.VPButton {
+  border-radius: 8px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1.6px;
+  text-underline-offset: 3px;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.VPButton.brand:hover,
+.VPButton.alt:hover {
+  box-shadow: inset 0 0 0 100px rgb(0 0 0 / 12%);
+}
+
+.VPFeature {
+  border-color: var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+}
+
+.VPFeature .title {
+  color: var(--vp-c-text-1);
+}
+
+.VPFeature .details {
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc h4 {
+  color: var(--vp-c-text-1);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.vp-doc h1 {
+  font-family: "Quincy CF", "Sohne Kraftig", Arial, sans-serif;
+}
+
+.vp-doc a {
+  color: var(--vp-c-brand-1);
+  text-decoration-color: var(--oh-brown);
+  text-decoration-thickness: 1.3px;
+  text-underline-offset: 2px;
+}
+
+.vp-doc a:hover {
+  color: var(--oh-brown);
+}
+
+.vp-doc p,
+.vp-doc li {
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc strong {
+  color: var(--vp-c-text-1);
+  font-weight: 500;
+}
+
+.vp-doc table {
+  border-color: var(--vp-c-divider);
+}
+
+.vp-doc tr {
+  background: transparent;
+  border-color: var(--vp-c-divider);
+}
+
+.vp-doc tr:nth-child(2n) {
+  background: rgb(241 234 224 / 48%);
+}
+
+.vp-doc th,
+.vp-doc td {
+  border-color: var(--vp-c-divider);
+}
+
+.vp-doc blockquote {
+  border-left-color: var(--oh-brown);
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc div[class*="language-"],
+.vp-doc pre {
+  border-radius: 8px;
+}
+
+.vp-doc .lead {
+  color: var(--vp-c-text-2);
+  font-family: "Sohne Buch", "Sohne Kraftig", Arial, sans-serif;
+  font-size: 1.08rem;
+  line-height: 1.65;
+}
+
+.vp-doc .course-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin: 24px 0;
+}
+
+.vp-doc .course-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--vp-c-bg-soft);
+}
+
+.vp-doc .course-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: var(--oh-accent);
+  content: "";
+}
+
+.vp-doc .course-card h3 {
+  margin-top: 0;
+}
+
+.vp-doc .course-card p:last-child {
+  margin-bottom: 0;
+}
+
+.vp-doc .diagram {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+  padding: 12px;
+}
+
+.vp-doc .diagram img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 767px) {
+  .VPHomeHero {
+    padding-top: 44px;
+  }
+
+  .VPHomeHero .actions {
+    gap: 10px;
+  }
+}

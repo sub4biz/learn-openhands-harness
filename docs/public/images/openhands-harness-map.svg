@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">OpenHands harness map</title>
+  <desc id="desc">A diagram showing a user task flowing through Agent Canvas, Agent Server, model selection, tools, memory, safety, workspace, trace, metrics, and evaluation.</desc>
+
+  <rect width="1200" height="620" fill="#f9f0d9"/>
+  <rect x="50" y="54" width="1100" height="508" rx="8" fill="#f9f6e9" stroke="#b3a88c" stroke-width="2"/>
+
+  <text x="70" y="100" font-family="'Quincy CF', 'Sohne Kraftig', Arial, sans-serif" font-size="34" font-weight="400" fill="#22150d">Learn Harness Engineering with OpenHands</text>
+  <text x="70" y="132" font-family="'Sohne Buch', 'Sohne Kraftig', Arial, sans-serif" font-size="18" fill="#5f5f5f">Change one lever, run the agent, inspect the trace, and keep the policy that improves behavior.</text>
+
+  <rect x="80" y="190" width="180" height="92" rx="8" fill="#ffff8b" stroke="#22150d"/>
+  <text x="170" y="226" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="18" font-weight="500" fill="#22150d">User Task</text>
+  <text x="170" y="252" text-anchor="middle" font-family="Geistmono, ui-monospace, monospace" font-size="13" fill="#5f5f5f">prompt, repo, budget</text>
+
+  <rect x="340" y="176" width="210" height="120" rx="8" fill="#f1eae0" stroke="#b3a88c"/>
+  <text x="445" y="218" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="19" font-weight="500" fill="#22150d">Agent Canvas</text>
+  <text x="445" y="246" text-anchor="middle" font-family="'Sohne Buch', 'Sohne Kraftig', Arial, sans-serif" font-size="14" fill="#5f5f5f">visible conversation</text>
+  <text x="445" y="267" text-anchor="middle" font-family="'Sohne Buch', 'Sohne Kraftig', Arial, sans-serif" font-size="14" fill="#5f5f5f">switch events, approvals</text>
+
+  <rect x="630" y="176" width="230" height="120" rx="8" fill="#22150d" stroke="#22150d"/>
+  <text x="745" y="218" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="19" font-weight="500" fill="#f9f0d9">Agent Server</text>
+  <text x="745" y="246" text-anchor="middle" font-family="'Sohne Buch', 'Sohne Kraftig', Arial, sans-serif" font-size="14" fill="#b3a88c">loop, events, tools</text>
+  <text x="745" y="267" text-anchor="middle" font-family="'Sohne Buch', 'Sohne Kraftig', Arial, sans-serif" font-size="14" fill="#b3a88c">workspace state</text>
+
+  <rect x="940" y="190" width="170" height="92" rx="8" fill="#f1eae0" stroke="#8a5f45"/>
+  <text x="1025" y="226" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="18" font-weight="500" fill="#22150d">Result</text>
+  <text x="1025" y="252" text-anchor="middle" font-family="Geistmono, ui-monospace, monospace" font-size="13" fill="#5f5f5f">answer, diff, tests</text>
+
+  <path d="M260 236 L340 236" stroke="#8a5f45" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <path d="M550 236 L630 236" stroke="#8a5f45" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <path d="M860 236 L940 236" stroke="#8a5f45" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="115" y="370" width="155" height="86" rx="8" fill="#ffff8b" stroke="#22150d"/>
+  <text x="192" y="405" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="16" font-weight="500" fill="#22150d">Model</text>
+  <text x="192" y="429" text-anchor="middle" font-family="Geistmono, ui-monospace, monospace" font-size="12" fill="#5f5f5f">routing, profiles</text>
+
+  <rect x="308" y="370" width="155" height="86" rx="8" fill="#f1eae0" stroke="#b3a88c"/>
+  <text x="386" y="405" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="16" font-weight="500" fill="#22150d">Tools</text>
+  <text x="386" y="429" text-anchor="middle" font-family="Geistmono, ui-monospace, monospace" font-size="12" fill="#5f5f5f">terminal, MCP</text>
+
+  <rect x="501" y="370" width="155" height="86" rx="8" fill="#f1eae0" stroke="#b3a88c"/>
+  <text x="579" y="405" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="16" font-weight="500" fill="#22150d">Memory</text>
+  <text x="579" y="429" text-anchor="middle" font-family="Geistmono, ui-monospace, monospace" font-size="12" fill="#5f5f5f">AGENTS.md, condenser</text>
+
+  <rect x="694" y="370" width="155" height="86" rx="8" fill="#f1eae0" stroke="#b3a88c"/>
+  <text x="772" y="405" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="16" font-weight="500" fill="#22150d">Safety</text>
+  <text x="772" y="429" text-anchor="middle" font-family="Geistmono, ui-monospace, monospace" font-size="12" fill="#5f5f5f">policy, sandbox</text>
+
+  <rect x="887" y="370" width="155" height="86" rx="8" fill="#f1eae0" stroke="#b3a88c"/>
+  <text x="965" y="405" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="16" font-weight="500" fill="#22150d">Evaluation</text>
+  <text x="965" y="429" text-anchor="middle" font-family="Geistmono, ui-monospace, monospace" font-size="12" fill="#5f5f5f">critic, traces</text>
+
+  <path d="M745 296 C745 332 192 332 192 370" stroke="#b3a88c" stroke-width="2" fill="none"/>
+  <path d="M745 296 C745 332 386 332 386 370" stroke="#b3a88c" stroke-width="2" fill="none"/>
+  <path d="M745 296 C745 332 579 332 579 370" stroke="#b3a88c" stroke-width="2" fill="none"/>
+  <path d="M745 296 C745 332 772 332 772 370" stroke="#b3a88c" stroke-width="2" fill="none"/>
+  <path d="M745 296 C745 332 965 332 965 370" stroke="#b3a88c" stroke-width="2" fill="none"/>
+
+  <rect x="80" y="496" width="1030" height="42" rx="8" fill="#22150d"/>
+  <text x="595" y="523" text-anchor="middle" font-family="'Sohne Kraftig', Arial, sans-serif" font-size="16" fill="#f9f0d9">The model writes code. The harness decides what it sees, what it can do, how it is checked, and when it stops.</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#8a5f45"/>
+    </marker>
+  </defs>
+</svg>

@@ -11,6 +11,11 @@ venv/
 # uv
 .uv-cache/
 
+# Node / docs site
+node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
 # OS
 .DS_Store
 

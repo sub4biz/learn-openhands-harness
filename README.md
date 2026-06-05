@@ -1,4 +1,6 @@
-# Learn Harness Engineering on OpenHands
+# Learn Harness Engineering with OpenHands
+
+Website: [rajshah4.github.io/learn-openhands-harness](https://rajshah4.github.io/learn-openhands-harness/)
 
 Every coding agent ships two things: a model that reasons and a harness that does everything else. The harness decides what the model sees, which tools it can call, what it remembers across turns, when it stops, and whether it runs in a sandbox or on your bare machine. This translates into implications for performance, reliability, and latency.
 
