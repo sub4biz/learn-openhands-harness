@@ -1,6 +1,6 @@
 # Learn Harness Engineering on OpenHands
 
-Every coding agent ships two things: a model that reasons and a harness that does everything else. The harness decides what the model sees, which tools it can call, what it remembers across turns, when it stops, and whether it runs in a sandbox or on your bare machine. This translates into implications for performance, reliablity, and latency.
+Every coding agent ships two things: a model that reasons and a harness that does everything else. The harness decides what the model sees, which tools it can call, what it remembers across turns, when it stops, and whether it runs in a sandbox or on your bare machine. This translates into implications for performance, reliability, and latency.
 
 This tutorial gives you a working harness you can open, run, and change. You'll use two open-source projects, [Agent Server](https://docs.openhands.dev/sdk/arch/agent-server) (the HTTP API that owns the workspace, conversation state, and tool dispatch) and [Agent Canvas](https://github.com/OpenHands/agent-canvas) (the operator UI), as a microscope. You'll give the agent real tasks, read the trace of what happened, and then change one lever at a time to see the behavior shift.
 
@@ -22,7 +22,7 @@ For each phase:
 2. Inspect the starter code.
 3. Predict what the harness should do.
 4. Run one small experiment.
-5. Inspect thetrace.
+5. Inspect the trace.
 6. Record the takeaway before moving on.
 
 Start live runs in Agent Canvas when learning a new concept. Use the coding agent
@@ -65,7 +65,7 @@ Three phases, in order. Each builds on the previous one.
 2. **[Harness tour](./02-harness-tour.md).** Give the agent a real task, read the trace, and see the five parts of a harness (model, tools, memory, safety, architecture) in the context of what actually happened.
 3. **[Projects](./projects/).** Seven cumulative projects plus two advanced extensions, each with a `starter/` and `solution/`. Change one lever at a time, keep the artifact, move on.
 
-Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each solution becomes the next project's foundation; by P07 you have a complete `harness.py` and an evaluation trace you can defend. P08 is the follow-on lesson for dynamic workflows: reducing orchestration code by letting the model write bounded fan-out/fan-in workflow logic.
+Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each solution becomes the next project's foundation; by P07 you have a complete `harness.py` and an evaluation trace you can defend. P08 and P09 are advanced extensions: dynamic workflows and measured model routing.
 
 The most important habit is separating constants from variables. A model
 router, security profile, default tool list, memory policy, and sandbox belong
@@ -82,6 +82,7 @@ Task prompt, repo path, budget, and one-off exceptions stay outside the harness.
 | [P06: Safety](./projects/p06-safety/) | Bound blast radius | Security profile + DockerWorkspace runner |
 | [P07: Capstone](./projects/p07-capstone/) | Stop "looks fine" | Critic + rubric + harness.py |
 | [P08: Dynamic Workflows](./projects/p08-dynamic-workflows/) | Reduce orchestration code | Workflow skill + decision rule |
+| [P09: Model Routing Benchmark](./projects/p09-model-routing-benchmark/) | Escalate on evidence | Routing table + escalation policy |
 
 ---
 
@@ -139,7 +140,7 @@ None of this is required. The tutorial is self-contained.
 
 ## Where to go from here
 
-After P07 you have a working `harness.py` and the mental model to extend it. P08 shows one extension in detail: dynamic workflows, where reusable orchestration policy moves into skills and the model writes the short-lived coordination code. A few other directions worth exploring:
+After P07 you have a working `harness.py` and the mental model to extend it. P08 and P09 show two extensions in detail: dynamic workflows, where reusable orchestration policy moves into skills, and model routing, where the harness chooses the cheapest model it trusts and escalates on evidence. A few other directions worth exploring:
 
 - **More use cases.** The [OpenHands use cases overview](https://docs.openhands.dev/openhands/usage/use-cases/overview) shows what people are building with coding harnesses beyond the tutorial tasks: migrations, test generation, documentation, issue triage. Good source of fresh prompts to stress-test your harness against.
 - **Multi-agent orchestration.** This tutorial builds a single-agent harness. The [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo) shows the next step: composing multiple harnesses (Claude Code, Gemini CLI, OpenHands) into an implement, test, review pipeline. Three orchestration patterns, same workflow, different isolation and state-sharing tradeoffs.

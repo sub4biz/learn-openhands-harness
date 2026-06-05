@@ -1,223 +1,76 @@
 # P09: Model Routing Benchmark
 
-| | |
-|---|---|
-| **What You Do** | Run the same 10 coding tasks three ways, then compare pass rate, tokens, cost, and cost per solved task. |
-| **Harness Mechanism** | Rules routing, `RouterLLM`, LLM metrics, `LLMProfileStore`, `SwitchLLMTool`, and Laminar traces |
+## What Problem Are You Solving?
 
-**Phase: ESCALATE ON EVIDENCE.** Routing is harness engineering. The frontier model is the consultant, not the default employee.
+Routing is harness engineering. A harness should not blindly assign every task to the most expensive model. It should use the cheapest model it trusts, protect high-risk work with a risk floor, and escalate when the current model shows evidence that it is stuck.
 
-The lesson is not "always use the best model." It is "use the cheapest model you trust for this job, and escalate on evidence."
+The problem in this lesson is to test that idea empirically. Students run the same 10 coding tasks three ways:
 
-This is the advanced follow-up to [P02: Model Routing](../p02-model-routing/). P02 teaches the first routing idea with one prompt and one pre-conversation rule. P09 turns routing into an empirical harness experiment with 10 tasks, three runs, cost-per-solved-task, gated escalation, Agent Canvas switching, and Laminar traces.
+1. Use a single frontier model for every task. This is the control group.
+2. Build a static rules router with `RouterLLM`. This routes once at the start of the task.
+3. Build a cascade with OpenHands profiles and `SwitchLLMTool`. This can change models during the run when evidence says the current model is not making progress.
 
-## Directory Guide
+The comparison is not just raw cost. A cheap run that fails the task is not a win. The headline metric is cost per solved task, alongside task pass rate, token usage, total cost, models used, and escalation reasons.
 
-| Path | What's inside |
-|---|---|
-| `toy_repo/` | The small Python package used for all 10 tasks. It has a CLI, date parsing, pagination, async code, auth middleware, API code, and tests. |
-| `tasks.json` | The task manifest: `{id, prompt, difficulty, tags, paths, success_check}`. |
-| `check_task.py` | Programmatic success checks. Task 9 uses a heuristic security-review artifact check. |
-| `starter/` | Scaffolds for the first two runs plus a separate SwitchLLM cascade scaffold. |
-| `solution/` | The completed lesson. Start with `run_frontier.py`, `run_static_rules.py`, and `run_switch_cascade.py`. |
+The frontier model is the consultant, not the default employee.
 
-For the learner path, open only these files first:
+## Start With These Files
 
-| Step | Starter | Solution |
+This project has starter code and completed solutions. Start with the starter files when teaching the lesson, then use the solution files to compare the intended design.
+
+| Purpose | Starter | Solution |
 |---|---|---|
-| Baseline and rules router | `starter/run_routing.py` | `solution/run_frontier.py`, `solution/run_static_rules.py` |
-| Cascade with profile switching | `starter/run_switch_cascade.py` | `solution/run_switch_cascade.py` |
+| Baseline run and static rules routing | `starter/run_routing.py` | `solution/run_frontier.py`, `solution/run_static_rules.py` |
+| Cascading routing with profile switching | `starter/run_switch_cascade.py` | `solution/run_switch_cascade.py` |
+| Shared benchmark behavior | | `solution/routing_core.py` |
+| Run all checks and dry runs | | `solution/run_all.py` |
 
-Support files:
+The benchmark edits `toy_repo/`, reads task definitions from `tasks.json`, and validates work with `check_task.py`. Live runs create fresh copies of the repo under `.openhands-runs/p09/...`, so each task starts from the same clean state.
 
-- `solution/routing_core.py`: shared local runner internals.
-- `solution/run_all.py`: setup checks and local dry runs.
+This lesson is the advanced follow-up to [P02: Model Routing](../p02-model-routing/). P02 shows a simple harness decision before a conversation starts. P09 turns that idea into a measured benchmark with real OpenHands agents, model metrics, profile switching, Agent Canvas events, and Laminar traces.
 
-## The Problem Shape
+## The Tasks In The Benchmark
 
-You will run the same task set three ways:
+The task set is intentionally skewed toward routine software work. That is where routing can save money. A few tasks are harder or higher risk so students can see why rules and escalation matter.
 
-1. `frontier`: use one model for every task. This is the baseline.
-2. `static`: build a rules router with `RouterLLM`. Route once at task start, then never escalate.
-3. `cascade`: start from the rules route, then use `SwitchLLMTool` and OpenHands profiles to move up when the trace shows the current model is stuck.
+| ID | Task | Difficulty | Routing lesson |
+|---|---|---|---|
+| 01 | Rename a variable across one file | trivial | Cheap should be enough |
+| 02 | Add docstrings for 3 functions | trivial | Cheap should be enough |
+| 03 | Fix a wrong assertion value | trivial | Cheap should be enough |
+| 04 | Add a `--verbose` CLI flag | easy | Cheap or mid |
+| 05 | Write date parser unit tests | easy | Cheap or mid |
+| 06 | Fix pagination off by one | medium | Good cheap-tier stress test |
+| 07 | Refactor a long report function | medium | Mid may be worth it |
+| 08 | Debug async race condition | hard | Escalation candidate |
+| 09 | Review auth middleware | hard | Risk floor to frontier |
+| 10 | Design API caching layer | hard | Expected cascade smoke test |
 
-Only the second and third runs are routing strategies. The first run is there so the comparison has a simple control.
+Before building a router, students should make a routing hypothesis. Which tasks should never start cheap? Which tasks look routine? Which tasks might start cheap but need a way to recover? That prediction gives the results table something meaningful to compare against.
 
-The solution keeps the learner-facing paths as three distinct entry points:
+## Start With The Baseline, Then Design Routing
 
-```bash
-cd projects/p09-model-routing-benchmark/solution
+There are three runs, but only two routing solutions to design.
 
-uv run --with openhands-sdk --with openhands-tools --with pytest python run_frontier.py
-uv run --with openhands-sdk --with openhands-tools --with pytest python run_static_rules.py
-uv run --with openhands-sdk --with openhands-tools --with pytest python run_switch_cascade.py --setup-profiles --save-profile-secrets --task p09-task-08
-```
+The single-model run is the baseline. It answers: what happens if we use the expensive model for everything? This gives a quality and cost reference point.
 
-For the full Agent Canvas cascade run, use:
+The first routing solution is static rules. It answers: how far can we get with a small amount of deterministic harness logic? This is the direct extension of P02.
 
-```bash
-uv run --with openhands-sdk --with openhands-tools --with pytest python run_switch_cascade.py --setup-profiles --save-profile-secrets --all-tasks
-```
+The second routing solution is a cascade. It answers: what should the harness do after the first model choice turns out to be wrong? This is the main lesson because routing is not only a preflight decision. In agentic work, evidence arrives while the task is running.
 
-Use `run_all.py` only for local setup checks such as dry runs, model printing, and preflight model calls. The learner-facing cascade is `run_switch_cascade.py` because the model change appears in the Agent Canvas timeline as a profile switch.
+The policy students are designing has three layers:
 
-## Before You Run
+1. A risk floor for auth and security work.
+2. A cheap-first static route for routine tasks.
+3. Evidence-based escalation when the current model repeats the same failure or stops making progress.
 
-Pause and predict:
+## Solution 1: Static Rules With RouterLLM
 
-- Which tasks should be cheap by default?
-- Which tasks should be protected by a risk floor?
-- Which task do you expect to fail on the cheap tier first?
-- What evidence should trigger escalation: repeated test failure, repeated error, repeated edits, turn budget, or unchanged diff?
-- What cost reduction still matters if routing fails one task?
+Use `RouterLLM` when the harness should choose the model and the agent should not need to know routing is happening. The agent receives one `llm`, but that object is a router. Inside `select_llm(messages)`, the router returns the key for one of the configured LLMs.
 
-The headline metric is **cost per solved task**, not raw cost. Raw cost overclaims when a cheaper strategy fails.
+The starter file is `starter/run_routing.py`. The completed versions are `solution/run_frontier.py` and `solution/run_static_rules.py`.
 
-The static baseline is intentionally budgeted. If rules choose CHEAP, that task gets the cheap-tier trust budget and no recovery path. A task labeled hard that routes to CHEAP because the prompt is short gets a one-call trust budget. The cascade uses the same budget as evidence, but can continue by moving one tier up.
-
-## Task Set
-
-The tasks are intentionally skewed toward routine work because that is where routing saves money:
-
-1. Rename a variable across one file.
-2. Write docstrings for 3 functions.
-3. Fix a failing test with a wrong assertion value.
-4. Add a `--verbose` CLI flag.
-5. Write unit tests for date parsing.
-6. Fix an off-by-one pagination bug.
-7. Refactor a long report function into modules.
-8. Debug an async race condition without serializing the simulated async work.
-9. Review auth middleware for security issues.
-10. Implement an API-specific caching layer with constructor injection for the backend client, clock, and per-resource TTLs, plus invalidation dependencies, request coalescing, failed-fill cleanup, fail-open stale reads that do not refresh the stale TTL, and backend-fill metrics.
-
-Each live run starts from a fresh copy of `toy_repo/` under `.openhands-runs/p09/...`.
-
-This is a transparent teaching benchmark by default. The prompt includes the task-specific validator command, so the agent can inspect `check_task.py` if it chooses. That makes the Agent Canvas recording easier to follow, but it is not the same as a hidden-test benchmark.
-
-For stronger model-quality separation, run the solution with `--opaque-checks` or `P09_OPAQUE_CHECKS=1`. The harness still calls `check_task(repo, task.id)` after the conversation, but the validator path is not included in the agent prompt.
-
-## Model Tiers
-
-The scripts use three OpenHands `LLM` objects:
-
-| Tier | Default model env var | Default model |
-|---|---|---|
-| CHEAP | `P09_MODEL_CHEAP` | `anthropic/claude-haiku-4-5-20251001` |
-| MID | `P09_MODEL_MID` | `anthropic/claude-sonnet-4-6` |
-| FRONTIER | `P09_MODEL_FRONTIER` | `anthropic/claude-opus-4-8` |
-
-Set `LLM_API_KEY` for the provider, either in your shell or in the repo-level `.env`. Set `LLM_BASE_URL` if you are using a gateway or proxy. The scripts load the nearest `.env` before importing OpenHands so tracing and model credentials are available during SDK setup. They use OpenHands SDK metrics for token counts and accumulated cost. Do not paste invented per-task costs into your writeup.
-
-Check what the benchmark will use before spending money:
-
-```bash
-uv run --with openhands-sdk --with openhands-tools --with pytest python run_all.py --print-models
-```
-
-Call each configured model once:
-
-```bash
-uv run --with openhands-sdk --with openhands-tools --with pytest python run_all.py --preflight-models
-```
-
-The single-model and `RouterLLM` rules runs select models directly from `P09_MODEL_*`. The cascade run uses Agent Server profiles named `p09-cheap`, `p09-mid`, and `p09-frontier` because `SwitchLLMTool` switches by profile name.
-
-## Router Design
-
-Keep the lesson path simple. Learners build two routing strategies after they run the single-model baseline.
-
-### Run 1: Single Model Baseline
-
-Run every task with the frontier tier. This is not the recommendation. It is the control group.
-
-What to measure:
-
-- Total cost.
-- Tasks passed.
-- Cost per solved task.
-- Which tasks looked routine enough that frontier felt wasteful.
-
-### Run 2: Rules Router With RouterLLM
-
-Start the coding exercise here. `RouterLLM` is the right first mechanism because the harness chooses the model while the agent code stays unchanged.
-
-Implement a static router:
-
-- Create three `LLM` instances: CHEAP, MID, and FRONTIER.
-- Pass them to `RouterLLM` as `llms_for_routing`.
-- Implement `select_llm(messages) -> str`.
-- Pick the route once from task metadata.
-- Keep returning the same tier for the rest of that task.
-
-Rules to start with:
-
-- If the task touches auth or security tags/paths, route to FRONTIER.
-- Risk floors override cost optimization.
-- Never route high-risk work down.
-- Prompt under 200 approximate tokens and no code block: CHEAP.
-- Difficulty hard: FRONTIER.
-- Else: MID.
-
-
-
-### Run 3: Cascade With SwitchLLMTool
-
-Use OpenHands profiles for cascade because the model needs to change along the path, after the conversation has already started.
-
-The cascade run has three pieces:
-
-- Profiles named `p09-cheap`, `p09-mid`, and `p09-frontier`.
-- `SwitchLLMTool` enabled in the agent's tool list.
-- Harness instructions that tell the agent exactly when to switch and what evidence to include.
-
-The starting profile still comes from the rules route. The escalation decision should not be vague. Use deterministic evidence from the conversation:
-
-- Do not run an LLM judge every turn.
-- Same test failing twice.
-- Same file changed 3 or more times. File views do not count.
-- Identical error string repeating.
-- Turn count exceeding the tier budget. Hard tasks on CHEAP use a one-call trust budget.
-- Diff unchanged for 2 turns.
-
-For the Canvas version, the evidence is written into the `switch_llm` call reason. That is the moment to show in the recording.
-
-Example tool-call reason:
-
-```json
-{"profile_name": "p09-mid", "reason": "same pagination assertion failed twice after two edits"}
-```
-
-Optional extension: add a cheap judge only after a deterministic trigger fires. Feed it a condensed state summary: task, current tier, last 3 actions, last 2 errors, test status, and trigger list. Do not send raw tool output.
-
-## Choosing The OpenHands Mechanism
-
-Before writing code, decide where the routing decision should live.
-
-Ask two questions:
-
-- Is the model chosen once before the task really starts?
-- Or can the model change after the agent has seen tests, errors, edits, and tool output?
-
-That choice determines the OpenHands mechanism.
-
-| Design need | Use | Why |
-|---|---|---|
-| Pick a model once from task metadata | `RouterLLM` | The harness owns the rule, and the agent code stays unchanged. |
-| Change models during an Agent Canvas run | `SwitchLLMTool` plus profiles | The conversation is already running, so the switch needs to happen through a profile change that Canvas can show. |
-
-### Static Rules: Use RouterLLM
-
-For the rules router, the decision happens at the start of the task. That is a good fit for `RouterLLM`.
-
-The design target:
-
-- The harness creates CHEAP, MID, and FRONTIER `LLM` objects.
-- The harness passes them to `RouterLLM`.
-- `select_llm(messages)` returns the tier name.
-- The route is based on task metadata and risk floors.
-- The same tier is returned for the rest of the task.
-
-The learner should be able to read the routing policy as ordinary code:
+The rules are intentionally simple:
 
 ```python
 if touches_auth_or_security(task):
@@ -229,93 +82,92 @@ if task.difficulty == "hard":
 return "mid"
 ```
 
-Current API shape, verified against OpenHands SDK v1.26.0:
+This gives students a clear first design:
 
-- `RouterLLM.select_llm(self, messages: list[Message]) -> str`
-- `select_llm` receives conversation messages, not the raw SDK event stream.
-- For static rules, the router can ignore most message content and use task metadata captured on the router instance.
+1. Load the task metadata.
+2. Attach the task to the router instance.
+3. Configure three LLMs: cheap, mid, and frontier.
+4. Let `RouterLLM` choose the tier before the task runs.
+5. Collect `llm.metrics` after the task to report tokens and cost.
 
-Important remote caveat: in v1.26.0, `RouterLLM` still serializes through `RemoteConversation` as a plain `LLM` with `model` equal to the router name. That is fine for local SDK runs, but it is not the best mechanism for a visible Agent Canvas switch.
+The important limitation is also part of the lesson. `RouterLLM.select_llm(messages)` receives conversation messages, not the raw SDK event stream. That is fine for static routing because the decision mostly comes from task metadata. It is not enough by itself for a clean cascade unless the router also tracks state across calls or parses tool-result messages. That is why the cascade solution uses a different OpenHands mechanism.
 
-### Cascade: Use Profiles Plus SwitchLLMTool
+## Solution 2: Cascading With Profiles And SwitchLLMTool
 
-For the cascade, the decision happens after the run has started. The agent might need to see the same test fail twice or the same file get edited several times before moving up. That is why cascade uses profiles and `SwitchLLMTool`.
+Use `SwitchLLMTool` when the model needs to change during an ongoing OpenHands conversation. The run starts with one profile, then the agent can call `switch_llm` to move to another profile. The conversation history, files, and task state are preserved, and Agent Canvas renders the switch as a visible event.
 
-The design target:
+The starter file is `starter/run_switch_cascade.py`. The completed version is `solution/run_switch_cascade.py`.
 
-- Create profiles named `p09-cheap`, `p09-mid`, and `p09-frontier`.
-- Start on the tier selected by the rules route.
-- Enable `SwitchLLMTool`.
-- Put the escalation policy in the harness instructions.
-- Require an evidence-based switch reason.
+In this design, the harness still owns the policy. The model does not get a vague instruction like "use your judgment." It gets concrete escalation criteria:
 
-This is the difference learners should see: `RouterLLM` hides routing from the agent, while `SwitchLLMTool` makes the switch an explicit event in the conversation.
+- Same test failing twice.
+- Same file edited 3 or more times.
+- Identical error string repeating.
+- Turn budget exceeded.
+- Diff unchanged for 2 turns.
 
-Run it against Agent Canvas:
+When one of those signals appears, the agent should switch up one tier and include the reason:
+
+```json
+{"profile_name": "p09-mid", "reason": "same pagination assertion failed twice after two edits"}
+```
+
+This is the teaching moment to record in Agent Canvas. Students should see the task begin on a cheaper profile, hit repeated evidence, call `switch_llm`, and finish with a different model. The trace should show why the harness paid for the stronger model only after evidence appeared.
+
+The cascade uses OpenHands profiles named `p09-cheap`, `p09-mid`, and `p09-frontier`. Those profiles are saved with `LLMProfileStore`, and `SwitchLLMTool` switches by profile name.
+
+## How OpenHands Fits In
+
+This lesson shows two different ways to integrate routing into OpenHands.
+
+With `RouterLLM`, the harness controls selection directly. The agent code is unchanged because the router behaves like an LLM. This is useful when the routing decision can be made from task metadata or conversation messages.
+
+With `SwitchLLMTool`, the running conversation can change profiles. This is useful when the decision depends on runtime evidence that appears after the agent has tried tests, edited files, or repeated the same error. It is also useful for teaching because Agent Canvas shows the model switch in the timeline.
+
+Both approaches preserve the main point: model choice is part of the harness design. The model is not the whole system.
+
+## Configure The Model Tiers
+
+The single-model and `RouterLLM` runs select models from environment variables.
+
+| Tier     | Env var              | Default                               |
+| -------- | -------------------- | ------------------------------------- |
+| CHEAP    | `P09_MODEL_CHEAP`    | `anthropic/claude-haiku-4-5-20251001` |
+| MID      | `P09_MODEL_MID`      | `anthropic/claude-sonnet-4-6`         |
+| FRONTIER | `P09_MODEL_FRONTIER` | `anthropic/claude-opus-4-8`           |
+
+Set `LLM_API_KEY` in your shell or repo-level `.env`. Set `LLM_BASE_URL` only if you use a gateway or proxy.
+
+The cascade run uses Agent Server profiles because `SwitchLLMTool` switches by profile name. Use `--setup-profiles` to create or update `p09-cheap`, `p09-mid`, and `p09-frontier`.
+
+## Run The Three Strategies And Collect Metrics
+
+After students design the baseline, static router, and cascade, these commands turn the designs into measured evidence. Use the dry run and model preflight first, then run each strategy and compare pass rate, token usage, cost, and cost per solved task.
+
+From the solution directory:
 
 ```bash
 cd projects/p09-model-routing-benchmark/solution
-
-LLM_API_KEY=... \
-uv run --with openhands-sdk --with openhands-tools --with pytest \
-  python run_switch_cascade.py --setup-profiles --save-profile-secrets --task p09-task-08
 ```
 
-If you do not want the script to save secrets in `~/.openhands/profiles`, create encrypted profiles in the Canvas settings UI named `p09-cheap`, `p09-mid`, and `p09-frontier`, then omit `--setup-profiles`.
-
-Canvas renders the switch as a "Switch LLM profile" event. That makes the cascade useful for screen recording. The tradeoff is control: the harness defines the policy, but the model has to call the switching tool when the evidence appears.
-
-## Laminar Traces
-
-OpenHands SDK tracing is automatic when the environment is configured. To send traces to Laminar:
+Dry-run routes without paid model calls:
 
 ```bash
-export LMNR_PROJECT_API_KEY="..."
-export P09_TRACE_USER_ID="raj-p09"
-```
-
-Then run any solution script normally. Each conversation is tagged with `lesson=p09`, `strategy`, and `task`, and OpenHands emits spans for agent steps, tool calls, LLM calls, and conversation lifecycle events.
-
-The P09 scripts load the nearest repo-level `.env`, so the Laminar key you put there is enough. Existing shell values take precedence.
-
-By default, `P09_TRACE_MODE=auto` converts a repo-level `LMNR_PROJECT_API_KEY` into Laminar's OTLP HTTP endpoint before OpenHands imports its tracing hooks.
-
-The scripts also set:
-
-```bash
-GRPC_ENABLE_FORK_SUPPORT=true
-GRPC_POLL_STRATEGY=poll
-GRPC_VERBOSITY=ERROR
-```
-
-That last setting matters for local SDK runs. The OpenHands terminal tool uses tmux; without `GRPC_VERBOSITY=ERROR`, gRPC can emit an info-level fork diagnostic to stderr when tmux panes are created, and libtmux treats any stderr from `tmux new-window` as a command failure.
-
-Trace modes:
-
-| Mode | Behavior |
-|---|---|
-| `auto` | If `LMNR_PROJECT_API_KEY` is set, send traces to Laminar through OTLP HTTP. |
-| `laminar-http` | Force Laminar OTLP HTTP. |
-| `laminar-grpc` | Keep OpenHands' native Laminar SDK path. Use this if your local terminal tools do not hit gRPC fork errors. |
-| `off` | Unset tracing env vars for the run. Use this if you want benchmark metrics without external traces. |
-
-For a self-hosted Laminar HTTP endpoint, set `P09_LAMINAR_HTTP_ENDPOINT`.
-
-## Smoke Checks
-
-Dry-run routing without paid LLM calls:
-
-```bash
-cd projects/p09-model-routing-benchmark/solution
 uv run --with openhands-sdk --with openhands-tools --with pytest python run_all.py --dry-run
 ```
 
-Run one local measured task:
+Check configured models:
 
 ```bash
-LLM_API_KEY=... \
-uv run --with openhands-sdk --with openhands-tools --with pytest \
-  python run_static_rules.py --task p09-task-10
+uv run --with openhands-sdk --with openhands-tools --with pytest python run_all.py --print-models
+uv run --with openhands-sdk --with openhands-tools --with pytest python run_all.py --preflight-models
+```
+
+Run the single-model baseline and the static router:
+
+```bash
+uv run --with openhands-sdk --with openhands-tools --with pytest python run_frontier.py
+uv run --with openhands-sdk --with openhands-tools --with pytest python run_static_rules.py
 ```
 
 Run one Canvas-visible cascade task:
@@ -326,19 +178,36 @@ uv run --with openhands-sdk --with openhands-tools --with pytest \
   python run_switch_cascade.py --setup-profiles --save-profile-secrets --task p09-task-10
 ```
 
-Task 10 is the expected escalation smoke test. Static rules cap the hard task's cheap run at the smaller trust budget and have no recovery path. The cascade starts from the same route, then should call `switch_llm` after evidence such as the one-call cheap trust budget, failed stale-refresh checks, failed-fill checks, or later budget triggers. You need at least one real profile-switch event in the Canvas trace before claiming the lesson works.
+Run all cascade tasks:
 
-Instructor calibration from June 5, 2026: task 10 produced the intended separation on this repo. Static rules started cheap and failed after the cheap trust budget. Cascade started cheap, moved to mid, and passed. Re-measure before recording because model behavior and costs change.
+```bash
+LLM_API_KEY=... \
+uv run --with openhands-sdk --with openhands-tools --with pytest \
+  python run_switch_cascade.py --setup-profiles --save-profile-secrets --all-tasks
+```
 
-## What To Record
+## Send Traces To Laminar
 
-Per strategy:
+Observability helps students understand what happened in a run and compare aggregate statistics across strategies. The OpenHands SDK supports OpenTelemetry-compatible tools. Here we are using Laminar.
+
+The scripts load the nearest `.env` before OpenHands imports tracing hooks. To send traces to Laminar:
+
+```bash
+export LMNR_PROJECT_API_KEY="..."
+export P09_TRACE_USER_ID="raj-p09"
+```
+
+Each conversation is tagged with `lesson=p09`, `strategy`, and `task`. Use those tags to compare the baseline, static router, and cascade runs in Laminar.
+
+## Record The Results
+
+Record results per task:
 
 | Task | Model(s) used | Attempts | Escalations | Tokens | Cost | Pass/fail |
 |---|---|---:|---:|---:|---:|---|
 | p09-task-01 | | | | | | |
 
-Summary:
+Then summarize by strategy:
 
 | Strategy | Tasks passed | Total cost | Cost per solved task |
 |---|---:|---:|---:|
@@ -346,27 +215,28 @@ Summary:
 | static | | | |
 | cascade | | | |
 
-Label your numbers as "measured on this repo, your mileage varies."
+Label demo numbers as "measured on this repo, your mileage varies." The scripts use SDK metrics so the reported costs come from actual token counts and configured model pricing, not invented per-task estimates.
 
-## References
+<details>
+<summary>References</summary>
 
-- [RouteLLM, LMSYS/Berkeley](https://www.lmsys.org/blog/2024-07-01-routellm/) and [paper](https://arxiv.org/abs/2406.18665): reported cost reductions over GPT-4-only of more than 85 percent on MT Bench, 45 percent on MMLU, and 35 percent on GSM8K while retaining 95 percent of GPT-4 performance. The matrix-factorization router reached 95 percent quality with 26 percent GPT-4 calls, or 14 percent with augmented data.
-- [Anyscale router tutorial](https://www.anyscale.com/blog/building-an-llm-router-for-high-quality-and-cost-effective-responses): classifier and matrix-factorization router tutorial with MT Bench routing comparisons.
-- [GPT-5 system card](https://openai.com/index/gpt-5-system-card/): classifier-style real-time router between fast and thinking models, trained on signals such as model switches, preference rates, and measured correctness.
-- [Harvey Legal Agent Benchmark initial results](https://www.harvey.ai/blog/legal-agent-benchmark-initial-results): published benchmark results show the cost and latency pressure around frontier-only agents. Phrase these as published results, not production claims.
+- [RouteLLM, LMSYS/Berkeley](https://www.lmsys.org/blog/2024-07-01-routellm/) and [paper](https://arxiv.org/abs/2406.18665): routers can reduce strong-model calls while preserving target quality.
+- [Anyscale router tutorial](https://www.anyscale.com/blog/building-an-llm-router-for-high-quality-and-cost-effective-responses): practical classifier and matrix-factorization routing tutorial.
+- [GPT-5 system card](https://openai.com/index/gpt-5-system-card/): real-time classifier-style routing between fast and thinking models.
+- [Harvey Legal Agent Benchmark initial results](https://www.harvey.ai/blog/legal-agent-benchmark-initial-results): published benchmark results showing cost and quality pressure around frontier-only agents.
 - [OpenHands SDK API reference: LLM](https://docs.openhands.dev/sdk/api-reference/openhands.sdk.llm): `RouterLLM`, `LLMProfileStore`, metrics, and token/cost tracking.
 - [OpenHands observability guide](https://docs.openhands.dev/sdk/guides/observability): Laminar and OTLP tracing configuration.
 - [OpenHands SDK paper](https://arxiv.org/abs/2511.03690): SDK architecture and model routing design.
 
-## What You Keep
+</details>
 
-A routing policy you can defend with traces and metrics:
+## What Students Should Leave With
+
+Students should finish with a routing policy they can defend with traces and metrics:
 
 - Risk floors for tasks you should never route down.
-- Cheap default for routine work.
+- A cheap default for routine work.
 - Evidence-based escalation before paying frontier cost.
 - Cost per solved task as the comparison metric.
-
-Save the policy and the result table. They are the advanced version of the simple P02 routing artifact.
 
 Previous routing lesson: [P02: Model Routing](../p02-model-routing/)
