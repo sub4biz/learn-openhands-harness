@@ -10,6 +10,29 @@ from pathlib import Path, PurePosixPath
 DEFAULT_SERVER_ROOT = "/projects"
 
 
+def load_dotenv(start: str | Path | None = None) -> None:
+    """Load the nearest .env without overriding existing environment values."""
+    root = Path(start or Path.cwd()).expanduser().resolve()
+    if root.is_file():
+        root = root.parent
+
+    for directory in [root, *root.parents]:
+        env_path = directory / ".env"
+        if not env_path.exists():
+            continue
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                continue
+            key, value = stripped.split("=", 1)
+            key = key.strip()
+            if key.startswith("export "):
+                key = key.removeprefix("export ").strip()
+            if key:
+                os.environ.setdefault(key, value.strip().strip("\"'"))
+        return
+
+
 def resolve_api_key() -> str | None:
     key = os.environ.get("AGENT_SERVER_API_KEY")
     if key:

@@ -63,7 +63,7 @@ Three phases, in order. Each builds on the previous one.
 
 1. **[Quickstart](./01-quickstart.md).** Install, get a green health check, and have a working canvas in front of you.
 2. **[Harness tour](./02-harness-tour.md).** Give the agent a real task, read the trace, and see the five parts of a harness (model, tools, memory, safety, architecture) in the context of what actually happened.
-3. **[Projects](./projects/).** Seven cumulative projects plus one advanced extension, each with a `starter/` and `solution/`. Change one lever at a time, keep the artifact, move on.
+3. **[Projects](./projects/).** Seven cumulative projects plus two advanced extensions, each with a `starter/` and `solution/`. Change one lever at a time, keep the artifact, move on.
 
 Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each solution becomes the next project's foundation; by P07 you have a complete `harness.py` and an evaluation trace you can defend. P08 is the follow-on lesson for dynamic workflows: reducing orchestration code by letting the model write bounded fan-out/fan-in workflow logic.
 
