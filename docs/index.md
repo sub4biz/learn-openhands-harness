@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Learn Harness Engineering with OpenHands
   text: ""
-  tagline: "A hands-on course for understanding the harness around modern coding agents: model routing, tools, memory, safety, critics, traces, metrics, and workflow design."
+  tagline: "Agent = Model + Harness. A hands-on course for the system around the model: routing, tools, memory, safety, critics, traces, metrics, and workflow design."
   image:
     src: /images/harness-course-hero.png
     alt: Diagram showing coding models connected through a harness to course modules
@@ -31,13 +31,22 @@ features:
     details: Compare events, tools, tokens, cost, pass rate, traces, and cost per solved task for different configurations.
 ---
 
+<div class="harness-equation">
+  <span class="he-term">Agent</span>
+  <span class="he-op">=</span>
+  <span class="he-term">Model</span>
+  <span class="he-op">+</span>
+  <span class="he-term he-emphasis">Harness</span>
+  <span class="he-caption">The system around the model decides agent performance</span>
+</div>
+
 <HomeFlightTeaser />
 
 # A Friendly Front Door To The OpenHands Lab
 
 The GitHub repo is where the runnable labs live. This site is the guide: what to watch first, what to read, which files to open, and how the pieces connect.
 
-Harness engineering is the work around the model. The model writes code. The harness decides what the model sees, which tools it can use, what it remembers, what it can break, how work is verified, which model gets called, and when the loop stops.
+Harness engineering is the work around the model. The model writes code. The harness decides what the model sees, which tools it can use, what it remembers, what it can break, how work is verified, which model gets called, and when the loop stops. See the [harness engineering experiments repo](https://github.com/rajshah4/harness-engineering) and the [blog post](https://rajivshah.com/blog/harness-engineering.html) for the deeper argument behind this course.
 
 <div class="course-grid">
   <div class="course-card">

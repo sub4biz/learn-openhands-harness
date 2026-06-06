@@ -4,6 +4,15 @@ aside: false
 
 # Visual Intro
 
+<div class="harness-equation">
+  <span class="he-term">Agent</span>
+  <span class="he-op">=</span>
+  <span class="he-term">Model</span>
+  <span class="he-op">+</span>
+  <span class="he-term he-emphasis">Harness</span>
+  <span class="he-caption">The model writes code. The harness decides everything else.</span>
+</div>
+
 This visual explains the central course claim: the model is not the whole agent. A coding agent becomes useful when the harness gives the model a loop, tools, memory, safety boundaries, verification, routing, and a trace you can inspect.
 
 Use this page before the [Harness Tour](/harness-tour). The tour gives you a real OpenHands task. This page gives you the mental model for what you are watching.
@@ -57,8 +66,10 @@ Then move to [P01: Agent Trace](/projects/p01-agent-trace) and practice reading 
 
 ## References
 
+- [Harness Engineering blog post](https://rajivshah.com/blog/harness-engineering.html) — the longer argument behind the course
+- [Harness engineering experiments repo](https://github.com/rajshah4/harness-engineering) — runnable measurements for retrieval, memory, loops, tools, and architecture
 - [Google Research: ReAct](https://research.google/blog/react-synergizing-reasoning-and-acting-in-language-models/)
 - [Anthropic: Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
 - [OpenAI: Harness engineering](https://openai.com/index/harness-engineering/)
 - [OpenHands Agent Server architecture](https://docs.openhands.dev/sdk/arch/agent-server)
-- [Terminal-Bench GitHub README](https://github.com/harbor-framework/terminal-bench)
+- [Terminal-Bench leaderboard](https://www.tbench.ai/leaderboard)

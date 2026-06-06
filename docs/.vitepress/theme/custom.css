@@ -439,6 +439,61 @@ body {
   height: auto;
 }
 
+.harness-equation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  margin: 32px auto 16px;
+  padding: 18px 22px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  background: var(--vp-c-bg-soft);
+  text-align: center;
+}
+.harness-equation .he-term {
+  color: var(--vp-c-text-1);
+  font-family: "Quincy CF", var(--vp-font-family-base);
+  font-size: clamp(28px, 4.4vw, 44px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+}
+.harness-equation .he-op {
+  color: var(--oh-brown);
+  font-family: var(--vp-font-family-mono);
+  font-size: clamp(22px, 3.4vw, 32px);
+  font-weight: 500;
+}
+.harness-equation .he-emphasis {
+  position: relative;
+  color: var(--vp-c-text-1);
+  background: linear-gradient(180deg, transparent 62%, var(--oh-accent) 62%);
+  padding: 0 6px;
+}
+.harness-equation .he-caption {
+  flex-basis: 100%;
+  margin-top: 4px;
+  color: var(--vp-c-text-2);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:global(.dark) .harness-equation {
+  background: rgb(241 234 224 / 4%);
+  border-color: rgb(249 240 217 / 14%);
+}
+.dark .harness-equation {
+  background: rgb(241 234 224 / 4%);
+  border-color: rgb(249 240 217 / 14%);
+}
+.dark .harness-equation .he-emphasis {
+  background: linear-gradient(180deg, transparent 62%, rgb(255 225 101 / 65%) 62%);
+}
+
 @media (max-width: 767px) {
   .VPHomeHero {
     padding-top: 44px;

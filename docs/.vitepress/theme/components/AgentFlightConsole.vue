@@ -350,7 +350,7 @@ onBeforeUnmount(() => observer?.disconnect());
 <template>
   <section class="afc" aria-label="Visual intro scrollytelling console">
     <header class="afc-intro">
-      <p class="afc-kicker">Scroll The Harness Into View</p>
+      <p class="afc-kicker">Agent = Model + Harness · scroll the harness into view</p>
       <h2>One task. Eight versions of the agent around the same model.</h2>
       <p>
         Each scroll step adds one harness component because a real failure mode

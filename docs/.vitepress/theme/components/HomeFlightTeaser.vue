@@ -346,7 +346,7 @@ const ctaHref = "/learn-openhands-harness/concepts/visual-intro";
 
     <div class="hft-cta">
       <div class="cta-text">
-        <p class="cta-eyebrow">The course in one visual</p>
+        <p class="cta-eyebrow">Agent = Model + Harness · the course in one visual</p>
         <p class="cta-line">
           One task. Eight versions of the agent around the same model.
           Scroll the harness into view.

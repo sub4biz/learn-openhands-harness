@@ -4,6 +4,14 @@ The concept pages connect the blog post, videos, experiments, and OpenHands impl
 
 ## Core Thesis
 
+<div class="harness-equation">
+  <span class="he-term">Agent</span>
+  <span class="he-op">=</span>
+  <span class="he-term">Model</span>
+  <span class="he-op">+</span>
+  <span class="he-term he-emphasis">Harness</span>
+</div>
+
 Model capability and execution reliability are different things. A stronger model can still fail if the harness gives it vague context, wrong tools, no memory, unsafe permissions, weak verification, or no way to recover when it gets stuck.
 
 The harness is the system around the model:
