@@ -270,13 +270,13 @@ const phases: Phase[] = [
     ],
     focus: "benchmark",
     feed: [
-      { t: "00:30", kind: "eval", text: "terminal-bench · task: real terminal env" },
-      { t: "00:31", kind: "eval", text: "harness runs commands in a sandbox" },
-      { t: "00:32", kind: "eval", text: "verifier inspects final filesystem state" },
-      { t: "00:33", kind: "eval", text: "row recorded as agent + model" },
+      { t: "00:30", kind: "eval", text: "terminal-bench · same Claude Opus 4.6 model" },
+      { t: "00:31", kind: "eval", text: "harness A · Meta-Harness · 76.4%" },
+      { t: "00:32", kind: "eval", text: "harness B · Claude Code · 58.0%" },
+      { t: "00:33", kind: "eval", text: "~18 pts came from harness, not model" },
     ],
     gauges: { evidence: 90, durability: 80, containment: 85, verification: 95 },
-    note: "agent + model · not model alone",
+    note: "same model · harness moves the row",
   },
 ];
 
@@ -537,39 +537,39 @@ onBeforeUnmount(() => observer?.disconnect());
               <transition name="fade-up">
                 <div v-if="activePhase.id === 'evidence'" class="bench">
                   <div class="bench-head">
-                    <span>TERMINAL-BENCH · evidence card</span>
-                    <strong>agent + model</strong>
+                    <span>TERMINAL-BENCH 2.0 · same model, different harness</span>
+                    <strong>harness moves the row</strong>
                   </div>
                   <table class="bench-table">
                     <thead>
                       <tr>
-                        <th>Agent</th>
+                        <th>Harness</th>
                         <th>Model</th>
                         <th>Score</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td>OpenHands</td>
-                        <td>Claude Opus 4.5</td>
-                        <td>51.9%</td>
+                        <td>vix <span class="bench-rank">#1</span></td>
+                        <td>Claude Opus 4.7</td>
+                        <td>90.2%</td>
                       </tr>
-                      <tr>
-                        <td>Codex CLI</td>
-                        <td>GPT-5</td>
-                        <td>49.6%</td>
+                      <tr class="bench-pair">
+                        <td>Meta-Harness</td>
+                        <td>Claude Opus 4.6</td>
+                        <td>76.4%</td>
                       </tr>
-                      <tr>
-                        <td>OpenHands</td>
-                        <td>GPT-5</td>
-                        <td>43.8%</td>
+                      <tr class="bench-pair">
+                        <td>Claude Code</td>
+                        <td>Claude Opus 4.6</td>
+                        <td>58.0%</td>
                       </tr>
                     </tbody>
                   </table>
                   <p class="bench-foot">
-                    Illustrative rows phrased from the public leaderboard
-                    (captured June 2026). Every row is an <strong>agent system</strong>,
-                    not a model in isolation. Swap the harness and the row moves.
+                    Same Claude Opus 4.6 underneath both bottom rows.
+                    <strong>~18 points of spread came from harness choice alone.</strong>
+                    Captured from the public Terminal-Bench 2.0 leaderboard, June 2026.
                   </p>
                 </div>
               </transition>
@@ -1121,6 +1121,22 @@ onBeforeUnmount(() => observer?.disconnect());
   color: #ffff8b;
   font-weight: 500;
   text-align: right;
+}
+.bench-rank {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgb(255 255 139 / 18%);
+  color: #ffff8b;
+  font-size: 9px;
+}
+.bench-table tr.bench-pair {
+  background: rgb(255 121 96 / 6%);
+  box-shadow: inset 2px 0 0 #ff8e76;
+}
+.bench-table tr.bench-pair td:nth-child(2) {
+  color: #ff8e76;
 }
 .bench-foot {
   margin: 10px 0 0;

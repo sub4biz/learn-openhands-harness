@@ -115,8 +115,8 @@ const phases: Phase[] = [
     on: ["task", "router", "model", "answer", "loop", "tools", "memory", "safety", "critic", "w-task-router", "w-router-model", "w-model-answer", "w-model-tools", "w-model-memory", "w-model-critic"],
     focus: "benchmark",
     feed: [
-      { t: "00:30", kind: "eval", text: "terminal-bench · sandbox + verifier" },
-      { t: "00:31", kind: "eval", text: "row = agent + model, not model alone" },
+      { t: "00:30", kind: "eval", text: "same Claude Opus 4.6 · two harnesses" },
+      { t: "00:31", kind: "eval", text: "harness moved the row ~18 pts" },
     ],
     gauges: { e: 90, d: 80, c: 85, v: 95 },
   },
@@ -312,6 +312,26 @@ const ctaHref = "/learn-openhands-harness/concepts/visual-intro";
               <span class="msg">{{ line.text }}</span>
             </li>
           </ol>
+
+          <transition name="hft-bench-fade">
+            <div v-if="phase.id === 'evidence'" class="hft-bench">
+              <div class="hft-bench-head">
+                <span>TERMINAL-BENCH 2.0</span>
+                <strong>same model · two harnesses</strong>
+              </div>
+              <div class="hft-bench-row">
+                <span class="hft-bench-name">Meta-Harness</span>
+                <span class="hft-bench-model">Opus 4.6</span>
+                <span class="hft-bench-score hi">76.4%</span>
+              </div>
+              <div class="hft-bench-row">
+                <span class="hft-bench-name">Claude Code</span>
+                <span class="hft-bench-model">Opus 4.6</span>
+                <span class="hft-bench-score lo">58.0%</span>
+              </div>
+              <p class="hft-bench-foot">~18 pts from harness alone · public leaderboard, June 2026</p>
+            </div>
+          </transition>
         </div>
       </div>
 
@@ -615,6 +635,72 @@ const ctaHref = "/learn-openhands-harness/concepts/visual-intro";
 .feed-rt .kind { color: #d49cff; }
 .feed-eval { border-left-color: #ffff8b !important; background: rgb(255 255 139 / 6%); }
 .feed-eval .kind { color: #ffff8b; }
+
+/* mini benchmark card at phase 8 */
+.hft-bench {
+  margin-top: 10px;
+  border: 1px solid rgb(255 255 139 / 45%);
+  border-radius: 6px;
+  background: rgb(255 255 139 / 6%);
+  padding: 10px 12px;
+}
+.hft-bench-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #ffff8b;
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.hft-bench-head strong {
+  color: #f9f0d9;
+  font-weight: 500;
+}
+.hft-bench-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid rgb(249 240 217 / 10%);
+  color: #f9f0d9;
+  font-family: var(--vp-font-family-mono);
+  font-size: 11.5px;
+}
+.hft-bench-row:last-of-type {
+  border-bottom: 0;
+}
+.hft-bench-name {
+  font-weight: 500;
+}
+.hft-bench-model {
+  color: #ff8e76;
+  font-size: 10.5px;
+}
+.hft-bench-score {
+  font-weight: 500;
+  font-size: 13px;
+}
+.hft-bench-score.hi { color: #ffff8b; }
+.hft-bench-score.lo { color: rgb(249 240 217 / 70%); }
+.hft-bench-foot {
+  margin: 8px 0 0;
+  color: rgb(249 240 217 / 55%);
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
+.hft-bench-fade-enter-active {
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+.hft-bench-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
 
 /* gauges */
 .hft-gauges {
