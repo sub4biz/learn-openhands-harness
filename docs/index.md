@@ -13,6 +13,9 @@ hero:
       text: Start The Course
       link: /start-here
     - theme: alt
+      text: See The Visual Intro
+      link: /concepts/visual-intro
+    - theme: alt
       text: View Projects
       link: /projects/
     - theme: alt
@@ -28,6 +31,8 @@ features:
     details: Compare events, tools, tokens, cost, pass rate, traces, and cost per solved task for different configurations.
 ---
 
+<HomeFlightTeaser />
+
 # A Friendly Front Door To The OpenHands Lab
 
 The GitHub repo is where the runnable labs live. This site is the guide: what to watch first, what to read, which files to open, and how the pieces connect.
@@ -37,7 +42,7 @@ Harness engineering is the work around the model. The model writes code. The har
 <div class="course-grid">
   <div class="course-card">
     <h3>Understand The Thesis</h3>
-    <p>Start with the harness engineering framing, the talk, and the experiments that show why harness design matters as much as model capability.</p>
+    <p>Start with the harness engineering framing, the Visual Intro, the talk, and the experiments that show why harness design matters as much as model capability.</p>
     <p><a href="/learn-openhands-harness/concepts/">Read the concepts</a></p>
   </div>
   <div class="course-card">

@@ -26,6 +26,7 @@ export default defineConfig({
           items: [
             { text: "Overview", link: "/concepts/" },
             { text: "Why OpenHands", link: "/concepts/why-openhands" },
+            { text: "Visual Intro", link: "/concepts/visual-intro" },
             { text: "Harness Levers", link: "/concepts/harness-levers" },
             { text: "Experiments", link: "/concepts/experiments" },
           ],

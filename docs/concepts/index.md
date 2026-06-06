@@ -22,6 +22,7 @@ The harness is the system around the model:
 - [Harness engineering repo and presentation material](https://github.com/rajshah4/harness-engineering)
 - [Engineering the Harness video](https://www.youtube.com/watch?v=KijChx7q2nY)
 - [Why OpenHands](/concepts/why-openhands)
+- [Visual Intro](/concepts/visual-intro)
 - [Harness Levers](/concepts/harness-levers)
 - [Experiments](/concepts/experiments)
 
