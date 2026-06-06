@@ -3,11 +3,11 @@ layout: home
 
 hero:
   name: Learn Harness Engineering with OpenHands
-  text: Get more from your coding models
+  text: ""
   tagline: "A hands-on course for understanding the harness around modern coding agents: model routing, tools, memory, safety, critics, traces, metrics, and workflow design."
   image:
-    src: /images/openhands-harness-map.svg
-    alt: OpenHands harness learning map
+    src: /images/harness-course-hero.png
+    alt: Diagram showing coding models connected through a harness to course modules
   actions:
     - theme: brand
       text: Start The Course

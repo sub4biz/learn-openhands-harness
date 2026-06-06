@@ -18,6 +18,6 @@ Each project changes one lever. Keep the task stable, change the harness, then i
 
 ## The Rule
 
-Do not keep a harness feature because it sounds sophisticated. Keep it because the trace and metrics show it improved the run.
+Excessive harness features can lead to bloat. Use traces and metrics to ensure your harness is optimized for your work.
 
-That is why the course repeats the same rhythm: predict, run, inspect, measure, keep.
+That is why the course teaches: predict, run, inspect, measure, keep.

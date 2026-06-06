@@ -2,7 +2,7 @@
 
 Closed agent products can be excellent, but they are hard to study. If the behavior changes, you may not know whether the model, prompt, tool policy, memory, safety layer, or runtime changed.
 
-OpenHands is useful for learning because the harness is visible.
+OpenHands is useful for learning because it is open source, so the harness is visible.
 
 ## What You Can Inspect
 
@@ -17,7 +17,7 @@ OpenHands is useful for learning because the harness is visible.
 
 ## Why It Matters
 
-The course is not only about OpenHands. It uses OpenHands to make general harness engineering concrete.
+The course is not only about OpenHands. It applies to any coding agent harness. We are using OpenHands to make general harness engineering concrete.
 
 When a run fails, you can ask:
 
