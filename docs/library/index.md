@@ -2,6 +2,8 @@
 
 The library is where course artifacts become reusable harness material. The repo already contains most of these artifacts inside project `solution/` directories. This section makes them easier to find.
 
+The artifacts come in two kinds. **Composable parts** (P01 through P07) stack into the `harness.py` you build across the course: a routing policy, a security profile, a critic, and so on. **Decision rules** (P08 through P10) are judgment you carry forward, like when to escalate models or when to index history instead of scanning it, even when they never become a line of `harness.py`.
+
 ## Copy-Ready Categories
 
 | Artifact | Use it for | Source project |
