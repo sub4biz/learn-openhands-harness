@@ -2,7 +2,7 @@
 
 ## What You Do
 
-Search a pile of past agent session logs two ways: scan every event file, then build a database/index. Measure the data returned, latency, token counts, and real cost of each, and see where the scan stops fitting in the model's context window at all.
+Search over past agent session logs two ways: scan every event file, then build a database/index. Measure the data returned, latency, token counts, and real cost of each, and see where the scan stops fitting in the model's context window at all.
 
 ## Harness Mechanism
 
