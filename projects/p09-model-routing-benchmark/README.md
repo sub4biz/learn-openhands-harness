@@ -126,6 +126,25 @@ With `SwitchLLMTool`, the running conversation can change profiles. This is usef
 
 Both approaches preserve the main point: model choice is part of the harness design. The model is not the whole system.
 
+## Pick Tier Models From The OpenHands Index
+
+The [OpenHands Index](https://index.openhands.dev/) publishes per-model average score, cost, and runtime across categories like issue resolution, frontend, testing, and information gathering. Those are the same axes this benchmark cares about.
+
+Grab the raw data and look for Pareto-optimal models (high score, low cost) to slot into each tier:
+
+```python
+from huggingface_hub import hf_hub_download
+import pandas as pd
+
+path = hf_hub_download("OpenHands/openhands-index", "test.parquet", repo_type="dataset")
+df = pd.read_parquet(path)
+
+# Cheapest models that still clear a quality bar are good CHEAP and MID candidates.
+print(df[df.average_score > 60].sort_values("average_cost").head())
+```
+
+Use the index to justify the defaults below. It does not replace measuring on your own task set.
+
 ## Configure The Model Tiers
 
 The single-model and `RouterLLM` runs select models from environment variables.
