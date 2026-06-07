@@ -67,7 +67,7 @@ Three phases, in order. Each builds on the previous one.
 2. **[Harness tour](./02-harness-tour.md).** Give the agent a real task, read the trace, and see the five parts of a harness (model, tools, memory, safety, architecture) in the context of what actually happened.
 3. **[Projects](./projects/).** Seven cumulative projects plus two advanced extensions, each with a `starter/` and `solution/`. Change one lever at a time, keep the artifact, move on.
 
-Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each solution becomes the next project's foundation; by P07 you have a complete `harness.py` and an evaluation trace you can defend. P08 and P09 are advanced extensions: dynamic workflows and measured model routing.
+Each project follows the [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) pattern: `starter/` is your starting point, `solution/` is the reference. Each solution becomes the next project's foundation; by P07 you have a complete `harness.py` and an evaluation trace you can defend. P08, P09, and P10 are advanced extensions: dynamic workflows, measured model routing, and indexing agent history.
 
 The most important habit is separating constants from variables. A model
 router, security profile, default tool list, memory policy, and sandbox belong
@@ -85,6 +85,7 @@ Task prompt, repo path, budget, and one-off exceptions stay outside the harness.
 | [P07: Capstone](./projects/p07-capstone/) | Stop "looks fine" | Critic + rubric + harness.py |
 | [P08: Dynamic Workflows](./projects/p08-dynamic-workflows/) | Reduce orchestration code | Workflow skill + decision rule |
 | [P09: Model Routing Benchmark](./projects/p09-model-routing-benchmark/) | Escalate on evidence | Routing table + escalation policy |
+| [P10: Indexing Agent History](./projects/p10-history-index/) | Index unbounded history | History index policy |
 
 ---
 
@@ -142,7 +143,7 @@ None of this is required. The tutorial is self-contained.
 
 ## Where to go from here
 
-After P07 you have a working `harness.py` and the mental model to extend it. P08 and P09 show two extensions in detail: dynamic workflows, where reusable orchestration policy moves into skills, and model routing, where the harness chooses the cheapest model it trusts and escalates on evidence. A few other directions worth exploring:
+After P07 you have a working `harness.py` and the mental model to extend it. P08, P09, and P10 show three extensions in detail: dynamic workflows, where reusable orchestration policy moves into skills; model routing, where the harness chooses the cheapest model it trusts and escalates on evidence; and indexing agent history, where unbounded past sessions move into a queryable index instead of being scanned. A few other directions worth exploring:
 
 - **More use cases.** The [OpenHands use cases overview](https://docs.openhands.dev/openhands/usage/use-cases/overview) shows what people are building with coding harnesses beyond the tutorial tasks: migrations, test generation, documentation, issue triage. Good source of fresh prompts to stress-test your harness against.
 - **Multi-agent orchestration.** This tutorial builds a single-agent harness. The [openhands-multi-agent-demo](https://github.com/rajshah4/openhands-multi-agent-demo) shows the next step: composing multiple harnesses (Claude Code, Gemini CLI, OpenHands) into an implement, test, review pipeline. Three orchestration patterns, same workflow, different isolation and state-sharing tradeoffs.
