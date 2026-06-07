@@ -4,18 +4,18 @@ The projects are the runnable heart of the course. Each one changes one harness 
 
 ## Project Path
 
-| Project | What you change | What you keep |
-|---|---|---|
-| [P01: Agent Trace](/projects/p01-agent-trace) | See the loop | Trace-reading checklist |
-| [P02: Model Routing](/projects/p02-model-routing) | Right-size the thinking | Routing policy |
-| [P03: Retrieval](/projects/p03-retrieval) | Add or remove search tools | MCP decision rule |
-| [P04: Decomposition](/projects/p04-decomposition) | Split large work | Decomposition plan |
-| [P05: Memory](/projects/p05-memory) | Add durable context | `AGENTS.md` and memory policy |
-| [P06: Safety](/projects/p06-safety) | Bound actions and runtime | Security profile and Docker runner |
-| [P07: Critic Capstone](/projects/p07-capstone) | Add evaluation and compose the harness | Critic, rubric, `harness.py` |
-| [P08: Dynamic Workflows](/projects/p08-dynamic-workflows) | Reduce orchestration code | Workflow skill and decision rule |
-| [P09: Model Routing Benchmark](/projects/p09-model-routing-benchmark) | Escalate on evidence | Routing table and escalation policy |
-| [P10: Indexing Agent History](/projects/p10-history-index) | Index unbounded history | History index policy |
+| Project | Focus |
+|---|---|
+| [P01: Agent Trace](/projects/p01-agent-trace) | Read the agent loop from its event trace |
+| [P02: Model Routing](/projects/p02-model-routing) | Right-size the model to the task |
+| [P03: Retrieval](/projects/p03-retrieval) | Decide when search tools earn their slot |
+| [P04: Decomposition](/projects/p04-decomposition) | Split large work into smaller runs |
+| [P05: Memory](/projects/p05-memory) | Add durable context to cut re-discovery |
+| [P06: Safety](/projects/p06-safety) | Bound the agent's blast radius and sandbox it |
+| [P07: Critic Capstone](/projects/p07-capstone) | Add evaluation and compose the full harness |
+| [P08: Dynamic Workflows](/projects/p08-dynamic-workflows) | Move orchestration into reusable workflows |
+| [P09: Model Routing Benchmark](/projects/p09-model-routing-benchmark) | Escalate models on evidence, measured |
+| [P10: Indexing Agent History](/projects/p10-history-index) | Index unbounded history instead of scanning it |
 
 ## How To Work
 
