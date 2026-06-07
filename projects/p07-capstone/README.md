@@ -1,59 +1,33 @@
 # P07: Verification + Capstone
 
-| | |
-|---|---|
-| **What You Do** | Add a critic with iterative refinement and a rubric, score repeated runs against the same agent-trace criteria, then wire the kept artifacts into `harness.py`. |
-| **Harness Mechanism** | [`Critic`](https://docs.openhands.dev/sdk/guides/critic) + [`IterativeRefinementConfig`](https://docs.openhands.dev/sdk/guides/iterative-refinement) + persisted agent traces |
+## What Problem Are You Solving?
 
-**Phase: STOP "LOOKS FINE".** The final harness is not "done" because it produced a plausible answer once. It is done when the trace, rubric, and repeated runs show that the behavior is stable enough to trust.
+A harness is not "done" because it produced a plausible answer once. It is done when the trace, a rubric, and repeated runs show the behavior is stable enough to trust. This is the capstone, in two parts:
 
-## Directory guide
+1. **Verification.** Add a critic with iterative refinement and a rubric, then score repeated runs against the same criteria. Decide whether the critic earns its cost.
+2. **Compose.** Wire every artifact you kept from P01 to P07a into a single `harness.py` and run it on a fresh repo.
 
-| Directory | What's inside |
-|---|---|
-| `starter/` | `evaluate.py` scaffolds the repeated-run critic experiment. `harness.py` is the capstone skeleton with TODO placeholders for every kept artifact from P01-P06. |
-| `solution/` | `evaluate.py` runs no-critic vs. critic trials and scores them. `harness.py` wires routing, tools, security policy, Docker sandbox, and an optional API critic. |
+Before you run, predict. What pass-rate lift would justify a critic? What cost-per-pass would make it a bad trade? Which P01 to P06 decisions are stable harness constants, and which are per-task variables? What evidence would make you comfortable running the final `harness.py` on a repo you have never touched?
 
-## Agent-assisted path
+## Start With These Files
 
-1. Open this `README.md` and `starter/` only.
-2. Ask your coding agent to complete the TODOs without reading `solution/`.
-3. Require it to run the smoke check or live command below and report the result.
-4. Compare against `solution/` only after your starter works, then read `solution/README.md` for the solution brief and note what differed.
+Open this README and `starter/` only. Fill the TODOs without reading `solution/`, run the dry run, then compare against `solution/` and read `solution/README.md` for the brief.
 
-## Before you run
+| Purpose | Starter | Solution |
+|---|---|---|
+| Repeated-run critic experiment | `starter/evaluate.py` (scaffold) | `solution/evaluate.py` (no-critic vs critic, scored) |
+| The composed harness | `starter/harness.py` (skeleton with TODOs for every P01 to P06 artifact) | `solution/harness.py` (routing, tools, policy, Docker, optional critic) |
 
-Pause and predict:
+## Part 1: Critic With Iterative Refinement
 
-- What pass-rate lift would justify adding a critic?
-- What cost-per-pass would make the critic a bad tradeoff?
-- Which P01-P06 decisions are stable harness constants, and which are per-task variables?
-- What evidence would make you comfortable running the final `harness.py` on a fresh repo?
+Critics and iterative refinement are the multi-agent pattern most likely to earn their keep. Reflexion-style critic loops on SWE-bench went 57.9% (random sampling) to 63.6% (success-only) to **73.8%** (iterative critic with rubrics); practitioner reports cite 2 to 3x quality.
 
----
+Pick a task with a *checkable* output. The solution ships a small `wordstats` task and a deterministic scorer. Hold the model, tools, and prompt constant across two configs:
 
-## P07a: Critic with iterative refinement
+- **A: no critic.** `get_default_agent(llm=llm)` and one `conversation.run()`. Whatever it produces is the answer.
+- **B: critic with iterative refinement.** Add `critic=...` and an `IterativeRefinementConfig`; `run()` loops until the critic clears the threshold or hits the cap.
 
-The [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials) frame critics and iterative refinement as the multi-agent pattern most likely to earn its keep. Reflexion-style critic loops on SWE-bench: 57.9% (random sampling) → 63.6% (success-only) → **73.8%** (iterative critic with rubrics). Boris Cherny's practitioner number is 2–3× quality.
-
-### Setup
-
-- Pick a task with a *checkable* output. The COBOL→Java sample task in the [iterative-refinement guide](https://docs.openhands.dev/sdk/guides/iterative-refinement) works well; so does "write a small Python module with tests" against a public spec.
-- Same model, same tools, same prompt across both runs.
-- Two configurations:
-  - **A: no critic:** `get_default_agent(llm=llm)` and `conversation.run()` once. Whatever it produces is the answer.
-  - **B: critic with iterative refinement:** add `critic=...` to the `Agent` and an `IterativeRefinementConfig` with a `success_threshold` and `max_iterations`. `conversation.run()` will loop internally until the critic clears the threshold or you hit the cap.
-
-The solution ships a small checkable `wordstats` task and a deterministic
-scorer. Start with the dry run:
-
-```bash
-cd solution
-uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
-  python evaluate.py --dry-run --trials 1 --config both
-```
-
-The critic block used by the evaluator and capstone harness is:
+The critic block used by the evaluator and the capstone:
 
 ```python
 from openhands.sdk.critic import APIBasedCritic, IterativeRefinementConfig
@@ -67,9 +41,7 @@ critic = APIBasedCritic(
 )
 ```
 
-`success_threshold=0.7` means "keep refining while the API critic estimates
-success below 70%." It is not the deterministic pass/fail score. The pass/fail
-score comes from the same rubric for every trial:
+`success_threshold=0.7` means "keep refining while the API critic estimates success below 70%." That is separate from the deterministic pass/fail score, which comes from the same rubric for every trial:
 
 ```text
 Pass only if stats.py exposes analyze_file, cli.py runs, empty files return
@@ -77,80 +49,63 @@ zeros, word rules handle hyphens/contractions/numbers, and missing files fail
 cleanly.
 ```
 
-### Procedure
+### Run it
 
-**Run each config five times.** This is the project where one-off measurements lie hardest. Score each run pass/fail against the same rubric. Track:
+Dry-run first:
 
-| Config | Pass rate (n=5) | Median iterations | Median cost | Wall-clock |
-|---|---|---|---|---|
-| A no critic | _e.g._ 2/5 | 1 | $0.04 | 30s |
-| B critic, threshold 0.7, max 3 | _e.g._ 4/5 | 2 | $0.11 | 90s |
+```bash
+cd solution
+uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
+  python evaluate.py --dry-run --trials 1 --config both
+```
 
-The solution command prints this table and writes each scored workspace under
-`.openhands-runs/p07-evaluate/`:
+Then run each config five times, because this is the project where one-off measurements lie hardest. The command prints the table and writes each scored workspace under `.openhands-runs/p07-evaluate/`:
 
 ```bash
 uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
   python evaluate.py --trials 5 --config both
 ```
 
-To score an existing workspace without model calls:
+Score an existing workspace without model calls with `--score-only /path/to/workspace`. If you have no hosted critic endpoint yet, run `--trials 1 --config no-critic` first to verify the Docker workspace, prompt, trace capture, and scorer before wiring `CRITIC_SERVER_URL`, `CRITIC_API_KEY`, and `CRITIC_MODEL_NAME`.
 
-```bash
-uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
-  python evaluate.py --score-only /path/to/generated/workspace
-```
+### Record the results
 
-If you do not have a hosted critic endpoint yet, first run
-`python evaluate.py --trials 1 --config no-critic`. That still verifies the
-Docker workspace, task prompt, trace capture, and deterministic scorer before
-you spend time wiring `CRITIC_SERVER_URL`, `CRITIC_API_KEY`, and
-`CRITIC_MODEL_NAME`.
+| Config | Pass rate (n=5) | Median iterations | Median cost | Wall-clock |
+|---|---|---|---|---|
+| A no critic | e.g. 2/5 | 1 | $0.04 | 30s |
+| B critic, threshold 0.7, max 3 | e.g. 4/5 | 2 | $0.11 | 90s |
 
-### What to look for
+Read it: pass-rate lift is the headline. If it does not move at least 10 to 15 points on a non-trivial task, your rubric is too lenient or the critic is scoring the wrong thing, so read the critic's output before blaming the pattern. Cost-per-pass (cost divided by pass rate) is often flat or better with the critic, because it shortens the long tail of "ran 30 turns, still wrong." Specific rubrics drive most of the lift; "looks fine" critics barely help.
 
-- Pass-rate lift is the headline number. If it doesn't move at least 10 to 15 percentage points on a non-trivial task, either your rubric is too lenient or the critic isn't actually scoring the right thing. Read the critic's output before you blame the pattern.
-- Cost-per-pass (cost ÷ pass rate) is often *flat or better* with the critic, because the critic shortens the long tail of "ran for 30 turns, still wrong." Compute this.
-- Specific rubrics drive most of the lift. Vague critics ("looks fine") barely help.
+Keep from Part 1: the `Critic` + `IterativeRefinementConfig` block, the rubric prompt, and a pass/fail table over repeated runs.
 
-> **What you keep from P07a:** the `Critic` + `IterativeRefinementConfig` block, the rubric prompt, and a pass/fail table over repeated runs.
+## Part 2: Capstone, Ship A Harness You Trust
 
----
+This part introduces no new lever. It is where the levers stop being hypothetical: you wire the keepers from P01 to P07a into one `harness.py` that boots a Docker-sandboxed agent with your routing, retrieval decision, decomposition rule, `AGENTS.md`, org security policy, and critic, then run it on a fresh repo.
 
-## P07b: Capstone: ship a harness you trust
+1. Open `starter/harness.py` and fill the TODO blocks with your kept artifacts.
+2. Pick a fresh repo you have not run the agent against (a public library you actually use is ideal).
+3. Run it:
 
-| | |
-|---|---|
-| **What You Do** | Wire the keepers from P01-P07a into a single `harness.py` that boots a Docker-sandboxed agent with your routing, retrieval decision, decomposition rule, `AGENTS.md`, organization security policy, and critic. Run it against a fresh repo. |
-| **Harness Mechanism** | All of the above. This project doesn't introduce a new lever. It's where the levers stop being hypothetical. |
+   ```bash
+   WORKSPACE_DIR=/path/to/repo \
+   uv run --with openhands-sdk --with openhands-tools --with openhands-workspace \
+     python harness.py "your real task"
+   ```
 
-**Phase: SHIP A HARNESS YOU TRUST.** P01-P07a each produced one artifact. The capstone is where you assemble them and find out whether your decisions compose.
+   P07 defaults to Docker host port `8020` (so it does not collide with P06's `8010`); set `HARNESS_PORT` if it is busy. The capstone mounts the policy directory read-only at `/openhands-harness-policy/`; override with `HARNESS_SECURITY_POLICY` if yours lives elsewhere.
+4. Watch the trace and confirm: the router sent work to the expected model leg (per-`usage_id` metrics), your tool list is active, your `AGENTS.md` loaded, your `org_security_policy.j2` shows in the system message, high-risk actions paused or were rejected, the critic (if kept) produced a readable verdict, and the Docker container started and tore down clean.
 
-### Procedure
+What "shipped" means: run the harness on three tasks across two repos. If the same `harness.py` produces results you would put in a PR, it shipped. If you keep tweaking knobs per task, you have a prototype, so go back to the project that owns the knob and decide whether it is a constant (belongs in `harness.py`) or a variable (per-task config). That constant-versus-variable line is the most underrated harness decision; make it on purpose.
 
-1. Open `starter/harness.py`. Fill in the TODO blocks with the artifacts you kept from P01-P07a.
-2. Pick a fresh repo you haven't run the agent against. A public open-source library you actually use is best.
-3. Run `WORKSPACE_DIR=/path/to/repo uv run --with openhands-sdk --with openhands-tools --with openhands-workspace python harness.py "your real task"`.
-   P07 defaults to Docker host port `8020` so it does not collide with the P06
-   `8010` example. If that port is busy, set `HARNESS_PORT=8021` or another
-   free port. The capstone mounts the security policy directory read-only at
-   `/openhands-harness-policy/`; override it with `HARNESS_SECURITY_POLICY` if
-   you keep your policy somewhere else.
-4. Watch the agent trace. Confirm:
-   - The router sends work to the expected model leg (read per-`usage_id` metrics).
-   - Your tool list is the active one.
-   - Your `AGENTS.md` was loaded (the first event in the conversation should reflect it).
-   - Your `org_security_policy.j2` is reflected in the agent's system message.
-   - High-risk actions pause or get rejected according to your security profile.
-   - The critic, if you kept one, fires and produces a verdict you can read.
-   - The Docker container started clean and tore down clean.
+<details>
+<summary>References</summary>
 
-### What "shipped" means
+- [Critic](https://docs.openhands.dev/sdk/guides/critic) and [IterativeRefinementConfig](https://docs.openhands.dev/sdk/guides/iterative-refinement)
+- [Harness engineering talk and slides](https://github.com/rajshah4/harness-engineering#presentation-materials): why critics are the multi-agent pattern most likely to pay off.
 
-Run the harness on three different tasks across two different repos. If the same `harness.py` produces results you'd be willing to put in a PR, it shipped. If you find yourself tweaking knobs in `harness.py` for each task, you have a *prototype*. Go back to the project that owns the tweak and decide whether the knob belongs in `harness.py` (constant) or in a per-task config (variable).
+</details>
 
-The line between "constant" and "variable" is the most underrated harness decision. Make it on purpose.
+## What Students Should Leave With
 
-## What you keep
-
-`harness.py` itself. This is the artifact the whole tutorial builds toward. Commit it. Use it. Iterate on it the way you'd iterate on any production tool. Not by rewriting from scratch each time, but by changing one knob at a time and measuring.
+`harness.py` itself, the artifact the whole course builds toward. Commit it, use it, and iterate the way you would on any production tool: one knob at a time, measured, not rewritten from scratch.

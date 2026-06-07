@@ -1,86 +1,95 @@
 # P03: Retrieval
 
-| | |
-|---|---|
-| **What You Do** | Run the prompt with `terminal + file_editor` only, then with an MCP code-search server attached. Measure when the extra retrieval tool earns its slot vs when it just adds turns. |
-| **Harness Mechanism** | Lexical baseline (`grep` / file reads / `find`) vs. lexical + [MCP](https://docs.openhands.dev/sdk/guides/mcp) `search_code` |
+## What Problem Are You Solving?
 
-**Phase: GET BETTER RESULTS FASTER.** Coding agents usually start with `grep`, file reads, and `find`. The [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials) frame retrieval as a speed/quality tradeoff: add semantic or MCP search only when traces show it finds better evidence, avoids misses, or shortens the path to the answer.
+Coding agents already retrieve well with `grep`, `find`, and file reads. The question this lesson answers is whether adding a dedicated search tool earns its slot or just adds turns. The honest answer is often "no, `grep` wins," and that is a legitimate result.
 
-## Directory guide
+You run the same task two ways and let the trace decide:
 
-| Directory | What's inside |
-|---|---|
-| `code_search_mcp.py` | Minimal dependency-free stdio MCP server with one `search_code` tool. It indexes the target repo and returns ranked snippets. |
-| `starter/` | `run_retrieval.py` runs the default lexical tool set and includes the helper that builds the MCP config. |
-| `solution/` | `run_retrieval.py` runs lexical-only and lexical+MCP configs and compares event/cost/MCP-call counts. Plus `mcp_decision_rule.md`, the one-line decision rule to keep. |
+1. **Lexical only.** `terminal` + `file_editor`. The agent greps and reads files.
+2. **Lexical plus MCP search.** The same tools plus a `search_code` MCP server over the same repo.
 
-## Agent-assisted path
+You compare on a vocabulary-match prompt (where the query words appear verbatim in the code) and a synonym prompt (where they do not), and ask whether `search_code` improved correctness, reduced misses, or shortened the path.
 
-1. Open this `README.md` and `starter/` only.
-2. Ask your coding agent to complete the TODOs without reading `solution/`.
-3. Require it to run the smoke check or live command below and report the result.
-4. Compare against `solution/` only after your starter works, then read `solution/README.md` for the solution brief and note what differed.
+This is the mirror image of [P10: Indexing Agent History](../p10-history-index/). There, history is unbounded so you must index. Here, the codebase is bounded and `grep` is already excellent, so retrieval is a judgment call, not a given.
 
-## Before you run
+## Start With These Files
 
-Pause and predict:
+Open this README and `starter/` only. Ask your coding agent to complete the TODOs without reading `solution/`, smoke-test the MCP server, run the live check, then compare against `solution/` and read `solution/README.md` for the brief.
 
-- Should exact-symbol search for `VITE_BACKEND_HOST` and `VITE_BACKEND_BASE_URL` need MCP at all?
-- What synonym prompt might expose a vocabulary mismatch?
-- What trace evidence would show `search_code` earned its slot?
-- If `search_code` is available but used zero times, what does that tell you?
+| Purpose | Starter | Solution |
+|---|---|---|
+| The MCP server | `code_search_mcp.py` (dependency-free stdio server, one `search_code` tool, BM25-style ranking) | same |
+| Run the configs | `starter/run_retrieval.py` (lexical + the MCP-config helper) | `solution/run_retrieval.py` (lexical vs lexical+MCP, compares events/cost/MCP calls) |
+| The artifact to keep | | `solution/mcp_decision_rule.md` |
 
-## Setup
+## The Two Configurations
 
-- Same model (from P02), same baseline tool list. Hold them constant.
-- Two configurations:
-  - **A: lexical only:** `terminal` + `file_editor`.
-  - **B: lexical + MCP search:** attach the included stdio MCP server through `Agent(..., mcp_config={"mcpServers": ...})`. It exposes `search_code` against the same repo.
+Hold the model (from P02) and the baseline tool list constant. Only retrieval changes.
 
-If you use Dockerized Agent Canvas, the MCP command runs inside the agent-server container. Keep both this tutorial repo and the target repo under the mounted project root, for example:
+- **A: lexical only.** `terminal` + `file_editor`.
+- **B: lexical plus MCP search.** Attach the included stdio server through `Agent(..., mcp_config={"mcpServers": ...})`, exposing `search_code` against the same repo.
+
+If you use Dockerized Agent Canvas, the MCP command runs inside the agent-server container, so keep both this repo and the target repo under the mounted project root:
 
 ```bash
 export PROJECT_PATH=/Users/you/Code
 export WORKSPACE_DIR=/projects/agent-canvas
 ```
 
-The project scripts map this tutorial's `code_search_mcp.py` to `/projects/learn-openhands-harness/projects/p03-retrieval/code_search_mcp.py` before sending the config to the server.
+Before you run, predict. Should exact-symbol search for `VITE_BACKEND_HOST` and `VITE_BACKEND_BASE_URL` need MCP at all? What synonym prompt would expose a vocabulary gap? What trace evidence would show `search_code` earned its slot? If `search_code` is available but called zero times, what does that tell you?
 
-Before spending model budget, smoke-test the MCP server:
+## Run It And Collect Metrics
+
+Smoke-test the server before spending model budget:
 
 ```bash
 uv run --with openhands-sdk --with openhands-tools \
   python projects/p03-retrieval/solution/run_retrieval.py --mcp-smoke
 ```
 
-To verify the remote agent server can launch the MCP subprocess, run one short live check:
+Verify the remote agent server can launch the MCP subprocess (should print `MCP` as 1 or more):
 
 ```bash
 uv run --with openhands-sdk --with openhands-tools \
   python projects/p03-retrieval/solution/run_retrieval.py --mcp-live-smoke
 ```
 
-That command should print `MCP` as `1` or more.
+Then run three passes:
 
-## Procedure
+1. Exact prompt against config A. Count `terminal`/`grep` calls and file reads; did it find the answer?
+2. Synonym prompt against config A: `"How does the canvas pick which backend to talk to?"`
+3. Synonym prompt against config B. Same counts, plus how many `search_code` calls, and whether the agent actually uses the tool or sticks with `grep`.
 
-1. Run the exact prompt against config A. Note: how many `terminal` / `grep` calls, how many file reads, did it find the answer?
-2. Run the synonym prompt against config A: `"How does the canvas pick which backend to talk to?"`
-3. Run the synonym prompt against config B. Note the same plus how many `search_code` calls, and whether the agent actually *uses* the new tool or sticks with `grep`.
+## Record The Results
 
-## What to look for
+| Run | Events | grep / reads | search_code calls | Wall | Cost | Found it? |
+|---|---:|---:|---:|---:|---:|:--:|
+| A exact | | | n/a | | | |
+| A synonym | | | n/a | | | |
+| B synonym | | | | | | |
 
-- For a repo where the query and source share vocabulary (`VITE_BACKEND_HOST` and `VITE_BACKEND_BASE_URL` are mentioned by exact name), `grep` wins on latency and accuracy. Semantic adds turns without adding answers.
-- Switch the prompt to something with a synonym gap (`"how does the canvas pick which backend to talk to"`). A strong flagship may still recover by grepping adjacent terms like `backend` and `proxy`; that is useful data, not a failure of the lesson.
-- MCP earns its slot only when `search_code` improves correctness, reduces misses, or avoids expensive wandering. If the MCP-call column is zero, the model did not need or choose the tool. This server is intentionally small: BM25-style scoring plus a few synonym expansions, not an embeddings service.
+For reference, one live run on `agent-canvas` showed lexical-exact at 46 events / 91.5s / $0.25 and lexical-synonym at 42 events / 58.8s / $0.17, which supports the default rule below: a strong model often bridges small vocabulary gaps without extra retrieval infrastructure.
 
-> Connection to the [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials): fast lexical search is the baseline, and embeddings earn their keep only when they reduce misses or expensive wandering. Don't take this on faith. Measure on *your* repo.
+## How To Read The Results
 
-In one live run on `agent-canvas`, lexical exact took 46 events / 91.5s / $0.25, while lexical synonym took 42 events / 58.8s / $0.17. That result supports the default rule: strong models often bridge small vocabulary gaps without extra retrieval infrastructure.
+- When the query and source share vocabulary (`VITE_BACKEND_HOST` is named verbatim), `grep` wins on latency and accuracy. Semantic search just adds turns.
+- On a synonym gap, a strong flagship may still recover by grepping adjacent terms like `backend` and `proxy`. That is useful data, not a failure of the lesson.
+- MCP earns its slot only when `search_code` improves correctness, reduces misses, or avoids expensive wandering. A zero in the `search_code` column means the model did not need or choose the tool. This server is intentionally small (BM25-style scoring plus a few synonym expansions), not an embeddings service.
 
-## What you keep
+The point is to write the rule from evidence on your repo, not to assume the fancier tool is better.
 
-A one-line decision rule. Something like *"Enable MCP search only when trace comparisons show it improves correctness or lowers events/wall-clock on vocabulary-mismatch prompts."* Or: *"Lexical only for this repo; synonym gaps are rare."* Either is a useful artifact. See `solution/mcp_decision_rule.md`.
+<details>
+<summary>References</summary>
 
--> Next: [P04: Task Decomposition](../p04-decomposition/)
+- [MCP in OpenHands](https://docs.openhands.dev/sdk/guides/mcp): attaching a stdio MCP server through `mcp_config`.
+- [P10: Indexing Agent History](../p10-history-index/): the case where retrieval is not optional.
+- [Harness engineering talk and slides](https://github.com/rajshah4/harness-engineering#presentation-materials): retrieval as a speed/quality tradeoff.
+
+</details>
+
+## What Students Should Leave With
+
+A one-line decision rule, written from your traces. For example: *"Enable MCP search only when trace comparisons show it improves correctness or lowers events/wall-clock on vocabulary-mismatch prompts,"* or *"Lexical only for this repo; synonym gaps are rare."* Either is a useful artifact. See `solution/mcp_decision_rule.md`.
+
+Next: [P04: Task Decomposition](../p04-decomposition/)

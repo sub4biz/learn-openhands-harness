@@ -1,51 +1,49 @@
 # P01: Canvas + Agent Trace
 
-| | |
-|---|---|
-| **What You Do** | Run one narrow task through the canvas, then read the agent trace. Count tool calls, inspect observations, and save the trace as your baseline. |
-| **Harness Mechanism** | Agent Server typed events + persisted conversation events + Canvas trace viewer |
+## What Problem Are You Solving?
 
-**Phase: SEE THE LOOP.** Before changing any knobs, learn to read the loop. The differentiator here is not that the agent can call tools. Claude Code, Cursor, and OpenHands can all do that. The differentiator is that the harness trace is visible, queryable, forkable, and reusable as evaluation data.
+Every coding agent runs the same loop: the model plans, calls a tool, reads the observation, and decides what to do next. You cannot tune a harness you cannot see, so before touching any lever, you learn to read that loop from its trace.
 
-## Directory guide
+The differentiator is not that the agent calls tools. Claude Code, Cursor, and OpenHands all do that. It is that the OpenHands harness trace is visible, queryable, forkable, and reusable as evaluation data. In this lesson you:
 
-| Directory | What's inside |
-|---|---|
-| `starter/` | `run_baseline.py` runs the prompt and prints raw event count + cost. The minimum viable SDK run. |
-| `solution/` | `run_baseline.py`, same script, extended to print a structured trace summary. Plus `trace_checklist.md`, the trace-reading checklist to keep. |
+1. Run one narrow task through Agent Canvas and watch the loop happen.
+2. Open the agent trace and account for every event: the user message, the planning, each tool call, each observation, the final answer.
+3. Save that trace as the baseline every later project compares against.
 
-## Agent-assisted path
+This is the reference point for the whole course. Skip it and every later ablation compares against vibes instead of evidence.
 
-1. Open this `README.md` and `starter/` only.
-2. Ask your coding agent to complete the TODOs without reading `solution/`.
-3. Require it to run the smoke check or live command below and report the result.
-4. Compare against `solution/` only after your starter works, then read `solution/README.md` for the solution brief and note what differed.
+## Start With These Files
 
-## Before you run
+Open this README and `starter/` only. Ask your coding agent to complete the TODOs without reading `solution/`, run the command below, then compare against `solution/` and read `solution/README.md` for the brief.
 
-Pause and predict:
+| Purpose | Starter | Solution |
+|---|---|---|
+| Run the task via the SDK | `starter/run_baseline.py` (event count + cost) | `solution/run_baseline.py` (adds a structured trace summary) |
+| The artifact to keep | | `solution/trace_checklist.md` |
 
-- Which tools do you expect to see in the trace: `terminal`, `file_editor`, or both?
-- What should the first useful retrieval step be for `VITE_BACKEND_HOST`?
-- Will the note be written by a file-editor action or by a terminal command/script?
-- What would make the final answer ungrounded?
+This is P01, so nothing feeds into it. Its output, one saved baseline trace and a reading checklist, is the foundation the rest of the course builds on.
 
-## Setup
+## The Task
 
-- Same repo and same prompt for the rest of the projects.
-- Use the default canvas setup from the [quickstart](../../01-quickstart.md).
-- Set `WORKSPACE_DIR=/path/to/that/repo` before running the SDK scripts.
-- If your Agent Canvas server is Dockerized, either set
-  `WORKSPACE_DIR=/projects/agent-canvas` or set
-  `AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects` and
-  `AGENT_WORKSPACE_SERVER_ROOT=/projects` so host paths map correctly.
-- Good default prompt: `"Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set, and write a short note explaining how the dev script picks the backend."`
+Use the default canvas setup from the [quickstart](../../01-quickstart.md), with the same repo and prompt you will reuse for the rest of the projects.
 
-## Procedure
+> Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read or set, and write a short note explaining how the dev script picks the backend.
+
+Before you run it, predict the trace. Which tools do you expect, `terminal`, `file_editor`, or both? What is the first useful retrieval step for `VITE_BACKEND_HOST`? Will the note be written by a file-editor action or a terminal command? What would make the final answer ungrounded? Writing these down first turns the trace from a wall of events into a set of confirmed or broken predictions.
+
+## Run It And Read The Trace
+
+Set the workspace:
+
+```bash
+export WORKSPACE_DIR=/path/to/that/repo
+```
+
+If your Agent Canvas server is Dockerized, either set `WORKSPACE_DIR=/projects/agent-canvas`, or set `AGENT_WORKSPACE_HOST_ROOT=/path/to/your/projects` and `AGENT_WORKSPACE_SERVER_ROOT=/projects` so host paths map correctly.
 
 1. Start a fresh conversation in the canvas and run the prompt to completion.
-2. Open the agent trace. Identify: user message, assistant planning, each tool call, each observation, final answer, and any compaction placeholder.
-3. Save the agent trace from the canvas UI if export is available in your build, or from the API:
+2. Open the agent trace. Identify the user message, assistant planning, each tool call, each observation, the final answer, and any compaction placeholder.
+3. Save the trace, from the canvas UI if export exists in your build, or from the API:
 
    ```bash
    mkdir -p .openhands-runs/traces
@@ -56,11 +54,16 @@ Pause and predict:
      > .openhands-runs/traces/p01-baseline-events.json
    ```
 
-   OpenHands stores the trace as typed events; "agent trace" is the teaching term.
-4. Record the working directory, repo SHA, model, active tool list, number of tool calls, wall-clock time, cost, and whether the final answer cited real files.
-5. Run `starter/run_baseline.py` to repeat the same task via the SDK. Compare your SDK trace to the canvas trace. They should match.
+   OpenHands stores the trace as typed events. "Agent trace" is the teaching term.
+4. Run the same task through the SDK and confirm the two traces match:
 
-## What to write down
+   ```bash
+   uv run --with openhands-sdk --with openhands-tools python starter/run_baseline.py
+   ```
+
+## Record The Results
+
+Fill this in from your run. It is the baseline every later project compares against.
 
 | Trace field | Value |
 |---|---|
@@ -74,14 +77,14 @@ Pause and predict:
 | Compaction fired? | |
 | Final answer correct? | |
 
-## What to look for
+## Why The Trace Is The Unit Of Work
 
-- The agent trace is the unit of diagnosis. If the final answer is wrong, find the first bad observation or skipped retrieval step.
-- A healthy code-reading run has a small number of targeted searches and file reads before answering.
-- A harness you cannot inspect cannot be tuned. This baseline trace is what makes the later ablations meaningful.
+- The trace is the unit of diagnosis. If the final answer is wrong, find the first bad observation or the retrieval step that was skipped.
+- A healthy code-reading run has a small number of targeted searches and file reads before it answers. A long wandering trace is a signal, not noise.
+- A harness you cannot inspect cannot be tuned. This baseline trace is what makes every later ablation measurable instead of anecdotal.
 
-## What you keep
+## What Students Should Leave With
 
-One baseline agent trace plus a trace-reading checklist (see `solution/trace_checklist.md`). Every later project compares against this trace, not against vibes.
+One saved baseline agent trace plus a trace-reading checklist (`solution/trace_checklist.md`). Every later project compares against this trace, not against vibes.
 
-→ Next: [P02: Model Routing](../p02-model-routing/)
+Next: [P02: Model Routing](../p02-model-routing/)

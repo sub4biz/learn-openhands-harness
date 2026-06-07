@@ -1,58 +1,44 @@
 # P05: Memory + Compaction
 
-| | |
-|---|---|
-| **What You Do** | Compare no durable memory vs. a minimal `AGENTS.md`, then inspect whether compaction appears in the agent trace and what it preserved. |
-| **Harness Mechanism** | `AGENTS.md` injection + [Condenser](https://docs.openhands.dev/sdk/arch/condenser) policy |
+## What Problem Are You Solving?
 
-**Phase: REDUCE RE-DISCOVERY.** Memory done well saves turns. Memory done badly adds tokens to every prompt for no benefit.
+Memory done well saves turns by stopping the agent from re-discovering the same repo facts every run. Memory done badly adds tokens to every prompt for no benefit. This lesson measures which one you have.
 
-## Directory guide
+You compare:
 
-| Directory | What's inside |
-|---|---|
-| `starter/` | `run_memory.py` runs against a repo with no `AGENTS.md` and no condenser config. TODOs for adding memory. |
-| `solution/` | `run_memory.py` runs both configs and saves trace JSON. `compare_traces.py` compares saved traces. `AGENTS.md` is a sample for agent-canvas, and `condenser_notes.md` is the policy note to keep. |
+1. **No durable memory.** The agent rediscovers the repo from scratch.
+2. **A minimal `AGENTS.md`.** Three to five hand-written lines of layout and non-obvious conventions.
+3. **(Optional) An auto-generated `AGENTS.md`.** The agent wrote it itself in a prior run.
 
-## Agent-assisted path
+You also inspect whether compaction fires in the trace and what its synthetic summary preserved. A closed harness asks you to trust its memory compression; an open one lets you audit what was kept and what was thrown away.
 
-1. Open this `README.md` and `starter/` only.
-2. Ask your coding agent to complete the TODOs without reading `solution/`.
-3. Require it to run the smoke check or live command below and report the result.
-4. Compare against `solution/` only after your starter works, then read `solution/README.md` for the solution brief and note what differed.
+## Start With These Files
 
-## Before you run
+Open this README and `starter/` only. Ask your coding agent to complete the TODOs without reading `solution/`, run the live command, then compare against `solution/` and read `solution/README.md` for the brief.
 
-Pause and predict:
+| Purpose | Starter | Solution |
+|---|---|---|
+| Run both configs, save traces | `starter/run_memory.py` (no memory + TODOs) | `solution/run_memory.py` (both, saves trace JSON) |
+| Compare saved traces offline | | `solution/compare_traces.py` |
+| Artifacts | | `solution/AGENTS.md` (sample), `solution/condenser_notes.md` |
 
-- What repo facts should a minimal `AGENTS.md` contain?
-- Which discovery steps should disappear when that memory is present?
-- What token or event reduction would make the memory worth keeping?
-- What would indicate the memory is generic noise instead of useful context?
+## The Configs
 
-## Setup
+Hold the model, tools, and retrieval policy from P01 to P04 constant. The default target is your local `agent-canvas` checkout; the prompt and sample `AGENTS.md` are tuned for it.
 
-- Same model + tools + retrieval policy from P01-P04.
-- Default target: your local `agent-canvas` checkout. The prompt and sample
-  `AGENTS.md` are tuned for that repo:
+```bash
+export WORKSPACE_DIR=/path/to/your/projects/agent-canvas
+```
 
-  ```bash
-  export WORKSPACE_DIR=/path/to/your/projects/agent-canvas
-  ```
+The script copies `WORKSPACE_DIR` before each run and removes the root `AGENTS.md` only from the no-memory copy, so your real repo is never touched.
 
-  You can use a different repo, but then replace the prompt and write an
-  `AGENTS.md` that matches that repo. The script copies `WORKSPACE_DIR` before
-  each run and removes root `AGENTS.md` only from the no-memory copy.
-- Two configurations (and one optional):
-  - **A: no `AGENTS.md`:** the scripts copy `WORKSPACE_DIR` to a temp directory and remove `AGENTS.md` there, so your original repo is not touched.
-  - **B: minimal `AGENTS.md`:** three to five lines, hand-written, describing the directory layout and any non-obvious conventions. Don't auto-generate it.
-  - **C (optional): auto-generated `AGENTS.md`:** let the agent write it itself in a previous conversation. Feed that one in.
+- **A: no `AGENTS.md`.**
+- **B: minimal `AGENTS.md`.** Three to five lines, hand-written. Do not auto-generate it.
+- **C (optional): auto-generated `AGENTS.md`.** Feed in one the agent wrote itself.
 
-## Procedure
+Before you run, predict. What repo facts belong in a minimal `AGENTS.md`? Which discovery steps should vanish when it is present? What token or event reduction would make it worth keeping? What would signal the memory is generic noise rather than useful context?
 
-1. Run the prompt against A. Record turns, tokens, correctness, and *what the agent re-discovered*: directory layout, where to look first, etc.
-2. Add `AGENTS.md`, fresh conversation, same prompt. Compare.
-3. (Optional) Run C. If the [ETH Zurich result](https://arxiv.org/abs/2510.02669) holds, C will be measurably worse than B.
+## Run It And Collect Metrics
 
 From the solution directory:
 
@@ -61,8 +47,9 @@ WORKSPACE_DIR=/path/to/your/projects/agent-canvas \
 uv run --with openhands-sdk --with openhands-tools python run_memory.py
 ```
 
-The runner prints two trace paths, one for `no-memory` and one for
-`with-memory`. Compare them without making new model calls:
+Run the prompt against A and record turns, tokens, correctness, and what the agent re-discovered (directory layout, where to look first). Then add `AGENTS.md`, start a fresh conversation, same prompt. Optionally run C.
+
+The runner prints two trace paths. Compare them without new model calls:
 
 ```bash
 uv run python compare_traces.py \
@@ -70,30 +57,34 @@ uv run python compare_traces.py \
   with-memory=/path/to/with-memory-events.json
 ```
 
-## What to look for
+## Record The Results
 
-- Useful `AGENTS.md` reduces re-discovery turns. Useless `AGENTS.md` (verbose, generic) just adds tokens to every prompt.
-- This mirrors the [talk + slides](https://github.com/rajshah4/harness-engineering#presentation-materials) theme that useful repo memory reduces re-discovery work. Worth replicating on your own repo once.
-- `compare_traces.py` reports event deltas, token deltas, and a likely
-  re-discovery proxy. Treat the proxy as a starting point, then inspect the raw
-  trace before claiming why the run improved.
-- If compaction fires, inspect the synthetic summary event. A closed harness asks you to trust its memory compression; an open harness lets you audit what was kept and what was thrown away.
+| Config | Turns | Tokens | Re-discovery steps | Correct? |
+|---|---:|---:|---:|:--:|
+| A no memory | | | | |
+| B minimal AGENTS.md | | | | |
+| C auto-generated (optional) | | | | |
 
-## Further Reading: Skills
+## How To Read The Results
 
-Skills are the same experiment shape, but they are not part of the main P05
-path. Once `AGENTS.md` is dialed in, you can evaluate one skill with the same
-A/B rule: run without the skill, enable only that skill, rerun the same prompt,
-and keep it only if the trace shows a measurable improvement. The pattern is
-similar to [`rajshah4/evaluating-skills-tutorial`](https://github.com/rajshah4/evaluating-skills-tutorial);
-SkillsBench reports that some skills reduce performance, so don't trust them by
-default.
+- A useful `AGENTS.md` reduces re-discovery turns. A useless one (verbose, generic) just adds tokens to every prompt.
+- `compare_traces.py` reports event deltas, token deltas, and a re-discovery proxy. Treat the proxy as a starting point, then read the raw trace before claiming why a run improved.
+- If compaction fires, open the synthetic summary event and check what it kept versus discarded.
+- If you run C, expect it to be measurably worse than B if the ETH Zurich result holds: a model writing its own context tends to bloat it.
 
-## What you keep
+Skills are the same experiment shape and not part of the main path: run without a skill, enable only that skill, rerun the same prompt, and keep it only if the trace shows a measurable gain. SkillsBench reports that some skills reduce performance, so do not trust them by default.
 
-Your hand-written `AGENTS.md` (5-20 lines), the `compare_traces.py` result,
-and a note on whether compaction fired and what it preserved. If you also run a
-skill experiment later, keep only a skill that demonstrably moved the needle.
-See `solution/` for examples.
+<details>
+<summary>References</summary>
 
--> Next: [P06: Org Safety Profile](../p06-safety/)
+- [Condenser](https://docs.openhands.dev/sdk/arch/condenser): the compaction policy this lesson inspects.
+- [ETH Zurich, self-written context](https://arxiv.org/abs/2510.02669): why auto-generated memory often underperforms a hand-written one.
+- [Evaluating skills tutorial](https://github.com/rajshah4/evaluating-skills-tutorial): the same A/B rule applied to skills.
+
+</details>
+
+## What Students Should Leave With
+
+Your hand-written `AGENTS.md` (5 to 20 lines), the `compare_traces.py` result, and a note on whether compaction fired and what it preserved. If you run a skill experiment later, keep only a skill that demonstrably moved the needle. See `solution/` for examples.
+
+Next: [P06: Org Safety Profile](../p06-safety/)
