@@ -24,7 +24,7 @@ hero:
 
 features:
   - title: Run The OpenHands Harness
-    details: Start with the basics through Agent Canvas and Agent Server by running a request and viewing the trace.
+    details: Start with the basics by running a request and viewing the trace.
   - title: Change One Lever
     details: Swap model routing, retrieval, memory, safety, critic, workflow, or escalation policy while keeping the task fixed.
   - title: See the Effect
@@ -42,9 +42,9 @@ features:
 
 <HomeFlightTeaser />
 
-# A Friendly Front Door To The OpenHands Lab
+# A Friendly Start To The Harness Engineering Exercises
 
-The GitHub repo is where the runnable labs live. This site is the guide: what to watch first, what to read, which files to open, and how the pieces connect.
+This site is the guide: what to watch first, what to read, which files to open, and how the pieces connect. The deeper richer exercises live in the GitHub repo. 
 
 Harness engineering is the work around the model. The model writes code. The harness decides what the model sees, which tools it can use, what it remembers, what it can break, how work is verified, which model gets called, and when the loop stops. See the [harness engineering experiments repo](https://github.com/rajshah4/harness-engineering) and the [blog post](https://rajivshah.com/blog/harness-engineering.html) for the deeper argument behind this course.
 
