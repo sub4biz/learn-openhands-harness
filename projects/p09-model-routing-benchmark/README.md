@@ -94,6 +94,8 @@ This gives students a clear first design:
 
 The important limitation is also part of the lesson. `RouterLLM.select_llm(messages)` receives conversation messages, not the raw SDK event stream. That is fine for static routing because the decision mostly comes from task metadata. It is not enough by itself for a clean cascade unless the router also tracks state across calls or parses tool-result messages. That is why the cascade solution uses a different OpenHands mechanism.
 
+The hand-written rules here are only one way to fill the routing seam. There are many implementations of model routing, and the decision function is the part that varies. As one proposed example, [OpenHands/benchmarks PR #742](https://github.com/OpenHands/benchmarks/pull/742) adds per-instance routing that replaces metadata rules with a small classifier LLM: each task is classified once into a category (Greenfield, Frontend, Testing, Information Gathering, or Issue Resolution), and the category maps to a tier model. It is the same route-once seam as `static`, with a learned classifier in place of the `if/else`. Worth knowing as another point in the design space; like any router, whether it wins depends on the task mix and is something you measure rather than assume.
+
 ## Solution 2: Cascading With Profiles And SwitchLLMTool
 
 Use `SwitchLLMTool` when the model needs to change during an ongoing OpenHands conversation. The run starts with one profile, then the agent can call `switch_llm` to move to another profile. The conversation history, files, and task state are preserved, and Agent Canvas renders the switch as a visible event.
@@ -244,6 +246,7 @@ Label demo numbers as "measured on this repo, your mileage varies." The scripts 
 - [RouteLLM, LMSYS/Berkeley](https://www.lmsys.org/blog/2024-07-01-routellm/) and [paper](https://arxiv.org/abs/2406.18665): routers can reduce strong-model calls while preserving target quality.
 - [Anyscale router tutorial](https://www.anyscale.com/blog/building-an-llm-router-for-high-quality-and-cost-effective-responses): practical classifier and matrix-factorization routing tutorial.
 - [GPT-5 system card](https://openai.com/index/gpt-5-system-card/): real-time classifier-style routing between fast and thinking models.
+- [OpenHands/benchmarks PR #742](https://github.com/OpenHands/benchmarks/pull/742): per-instance classifier routing across the default-agent benchmarks; a worked example of a learned routing function in the same route-once seam as the static router here.
 - [Harvey Legal Agent Benchmark initial results](https://www.harvey.ai/blog/legal-agent-benchmark-initial-results): published benchmark results showing cost and quality pressure around frontier-only agents.
 - [OpenHands SDK API reference: LLM](https://docs.openhands.dev/sdk/api-reference/openhands.sdk.llm): `RouterLLM`, `LLMProfileStore`, metrics, and token/cost tracking.
 - [OpenHands observability guide](https://docs.openhands.dev/sdk/guides/observability): Laminar and OTLP tracing configuration.
