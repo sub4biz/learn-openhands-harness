@@ -222,6 +222,17 @@ export P09_TRACE_USER_ID="raj-p09"
 
 Each conversation is tagged with `lesson=p09`, `strategy`, and `task`. Use those tags to compare the baseline, static router, and cascade runs in Laminar.
 
+## Verifiability Gates Escalation
+
+Escalate-on-evidence only works when you can cheaply tell that the current model failed. That is the hidden precondition behind every cascade in this lesson. Andrej Karpathy's verifiability framework names the axis: a task is *verifiable* when its output can be mechanically checked — code that compiles and passes tests, JSON that satisfies a schema — and far less verifiable when it cannot, like a summary or a design judgment.
+
+The two halves route differently:
+
+- **Verifiable tasks.** A cheap model plus a retry can approach frontier quality, because the verifier catches the misses and triggers a re-run. Here cheap-first with evidence-based escalation is the right default — the same loop your cascade implements.
+- **Low-verifiability tasks.** There is no free signal that the cheap model was wrong, so escalation has nothing to fire on. Either route the strong model up front, or add a separate judge and pay for it explicitly.
+
+One caution worth internalizing: your verifier is only as good as its checks. An ambiguous schema or a loose regex will pass wrong answers and fail right ones, and your routing decisions inherit that error. Treat the verifier as part of the harness you are measuring, not as ground truth.
+
 ## Record The Results
 
 Record results per task:
@@ -248,6 +259,7 @@ Label demo numbers as "measured on this repo, your mileage varies." The scripts 
 - [GPT-5 system card](https://openai.com/index/gpt-5-system-card/): real-time classifier-style routing between fast and thinking models.
 - [OpenHands/benchmarks PR #742](https://github.com/OpenHands/benchmarks/pull/742): per-instance classifier routing across the default-agent benchmarks; a worked example of a learned routing function in the same route-once seam as the static router here.
 - [Harvey Legal Agent Benchmark initial results](https://www.harvey.ai/blog/legal-agent-benchmark-initial-results): published benchmark results showing cost and quality pressure around frontier-only agents.
+- [Routing LLMs by task verifiability (informal experiment)](https://www.reddit.com/r/MachineLearning/comments/1u2c04u/routing_llms_by_task_verifiability_a_small/): a directional write-up applying Karpathy's verifiability framework to routing — a weak model plus a retry approaches frontier on checkable tasks (code, structured extraction), while the gap persists on multi-hop reasoning. Note the caveats: n=120, a single internal evaluator, not peer reviewed. Useful as an illustration of the verifiability axis, not as evidence.
 - [OpenHands SDK API reference: LLM](https://docs.openhands.dev/sdk/api-reference/openhands.sdk.llm): `RouterLLM`, `LLMProfileStore`, metrics, and token/cost tracking.
 - [OpenHands observability guide](https://docs.openhands.dev/sdk/guides/observability): Laminar and OTLP tracing configuration.
 - [OpenHands SDK paper](https://arxiv.org/abs/2511.03690): SDK architecture and model routing design.
