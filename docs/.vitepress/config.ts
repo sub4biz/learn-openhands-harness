@@ -47,6 +47,7 @@ export default defineConfig({
             { text: "P08: Dynamic Workflows", link: "/projects/p08-dynamic-workflows" },
             { text: "P09: Model Routing Benchmark", link: "/projects/p09-model-routing-benchmark" },
             { text: "P10: Indexing Agent History", link: "/projects/p10-history-index" },
+            { text: "P11: Subagents", link: "/projects/p11-subagents" },
           ],
         },
       ],

@@ -37,8 +37,12 @@ def resolve_api_key() -> str | None:
     key = os.environ.get("AGENT_SERVER_API_KEY")
     if key:
         return key
-    path = Path.home() / ".openhands" / "agent-canvas" / "session-api-key.txt"
-    return path.read_text().strip() if path.exists() else None
+    canvas_dir = Path.home() / ".openhands" / "agent-canvas"
+    for name in ("api-key.txt", "session-api-key.txt"):
+        path = canvas_dir / name
+        if path.exists():
+            return path.read_text().strip()
+    return None
 
 
 def _host_root() -> Path | None:

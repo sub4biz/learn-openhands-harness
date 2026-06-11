@@ -14,8 +14,9 @@ The projects are the runnable heart of the course. Each one changes one harness 
 | [P06: Safety](/projects/p06-safety) | Bound the agent's blast radius and sandbox it |
 | [P07: Critic Capstone](/projects/p07-capstone) | Add evaluation and compose the full harness |
 | [P08: Dynamic Workflows](/projects/p08-dynamic-workflows) | Move orchestration into reusable workflows |
-| [P09: Model Routing Benchmark](/projects/p09-model-routing-benchmark) | Escalate models on evidence, measured |
-| [P10: Indexing Agent History](/projects/p10-history-index) | Index unbounded history instead of scanning it |
+| [P09: Model Routing Benchmark](/projects/p09-model-routing-benchmark) | Select the most appropriate model |
+| [P10: Indexing Agent History](/projects/p10-history-index) | Add a database/index over conversation traces |
+| [P11: Subagents](/projects/p11-subagents) | When do subagents make sense? |
 
 ## How To Work
 

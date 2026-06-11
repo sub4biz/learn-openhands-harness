@@ -1,8 +1,8 @@
 # Projects: Learning Path
 
-Seven cumulative projects plus two advanced extensions. P01-P07 each change one harness lever and produce a config artifact that carries forward. By P07 you'll have a runnable `harness.py` and an agent-trace evaluation record that wires together everything you kept: your trace-reading checklist, model routing, retrieval decision, decomposition plan, memory policy, security profile, sandbox, and critic. P08 asks whether dynamic workflows can reduce orchestration code without hiding too much control inside the model. P09 returns to model routing as a measured benchmark with escalation.
+Seven cumulative projects plus four advanced extensions. P01-P07 each change one harness lever and produce a config artifact that carries forward. By P07 you'll have a runnable `harness.py` and an agent-trace evaluation record that wires together everything you kept: your trace-reading checklist, model routing, retrieval decision, decomposition plan, memory policy, security profile, sandbox, and critic. P08 asks whether dynamic workflows can reduce orchestration code without hiding too much control inside the model. P09 returns to model routing as a measured benchmark with escalation. P10 indexes unbounded agent history. P11 measures the subagent context boundary.
 
-If you're using this as a first learning path, treat P01-P05 as the core concepts. P06-P07 are the advanced path where safety, verification, and composition start looking like production harness design. P08 and P09 are optional until you are comfortable reading traces from multi-step work.
+If you're using this as a first learning path, treat P01-P05 as the core concepts. P06-P07 are the advanced path where safety, verification, and composition start looking like production harness design. P08-P11 are optional until you are comfortable reading traces from multi-step work.
 
 The pattern is behavior first: decide what agent behavior you want, change the smallest harness surface that could affect it, then observe whether the trace changed.
 
@@ -76,12 +76,20 @@ PROJECT EVOLUTION (OpenHands harness)
        |                                     + decision rule
        v
   P09  Model routing benchmark       → ESCALATE ON EVIDENCE
-                                       keep: routing benchmark table
-                                             + escalation policy
+       |                               keep: routing benchmark table
+       |                                     + escalation policy
+       v
+  P10  Indexing agent history         → QUERY THE PAST
+       |                               keep: history index policy
+       |                                     + bounded retrieval result
+       v
+  P11  Subagents                      → MEASURE THE BOUNDARY
+                                       keep: subagent decision rule
+                                             + context-isolation benchmark
 
   Each project produces a concrete artifact.
   P07 is where the core artifacts merge into one runnable harness.
-  P08 and P09 are advanced extensions.
+  P08-P11 are advanced extensions.
 ```
 
 ---
@@ -94,9 +102,9 @@ Every project directory follows the same shape:
 
 ```
 p01-agent-trace/
-├── README.md       ← instructions, setup, procedure, what to record
-├── starter/        ← starting point. Run this first
-└── solution/       ← reference implementation. Check your work
+|-- README.md       instructions, setup, procedure, what to record
+|-- starter/        starting point. Run this first
+`-- solution/       reference implementation. Check your work
 ```
 
 Each project README has:
@@ -255,6 +263,21 @@ Prompt: "Find every place VITE_BACKEND_HOST and VITE_BACKEND_BASE_URL are read o
 | Frontier every task | | | | |
 | Static routing | | | | |
 | Cascade routing | | | | |
+
+## P10: Indexing agent history
+| Query | scan bytes | index bytes | scan tokens | index tokens | Notes |
+|---|---:|---:|---:|---:|---|
+| `error` | | | | | |
+| `pip install` | | | | | |
+| `Traceback` | | | | | |
+
+## P11: Subagents
+| Scenario | Config | Input tokens | Cost | Wall time | Quality score | Compaction fired? |
+|---|---|---:|---:|---:|---:|:--:|
+| A small repo audit | single | | | | | |
+| A small repo audit | subagents | | | | | |
+| B research | single | | | | | |
+| B research | subagents | | | | | |
 ```
 
 Three runs is barely a signal; ten is convincing; thirty is real. Pick a budget and stick to it.
